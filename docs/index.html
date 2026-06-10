@@ -10,10 +10,11 @@
     />
     <style>
       :root {
-        --bg: #0b0b10;
+        --bg: #0b0e16;
         --fg: #f4f4f7;
         --muted: #a0a0ad;
-        --grad: linear-gradient(135deg, #a855f7, #3b82f6);
+        --accent: #6366f1;
+        --grad: linear-gradient(135deg, #6366f1, #3b4a82);
       }
       * {
         box-sizing: border-box;
@@ -22,7 +23,7 @@
         margin: 0;
         min-height: 100vh;
         font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-        background: radial-gradient(120% 120% at 50% 0%, #16161f 0%, var(--bg) 60%);
+        background: radial-gradient(120% 120% at 50% 0%, #141a2b 0%, var(--bg) 60%);
         color: var(--fg);
         display: grid;
         place-items: center;
@@ -33,15 +34,12 @@
         text-align: center;
       }
       .mark {
-        width: 72px;
-        height: 72px;
+        width: 112px;
+        height: 112px;
         margin: 0 auto 24px;
-        border-radius: 20px;
-        background: var(--grad);
-        display: grid;
-        place-items: center;
-        font-size: 38px;
-        box-shadow: 0 12px 40px -12px #a855f7aa;
+        border-radius: 23%;
+        display: block;
+        box-shadow: 0 18px 50px -16px #000a, 0 0 0 1px #ffffff12;
       }
       h1 {
         font-size: clamp(2.2rem, 6vw, 3.2rem);
@@ -62,11 +60,11 @@
         font-weight: 600;
         text-decoration: none;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
-        box-shadow: 0 10px 30px -10px #3b82f6aa;
+        box-shadow: 0 10px 30px -10px #6366f1aa;
       }
       .cta:hover {
         transform: translateY(-2px);
-        box-shadow: 0 16px 40px -12px #3b82f6cc;
+        box-shadow: 0 16px 40px -12px #6366f1cc;
       }
       .sub {
         margin-top: 14px;
@@ -76,8 +74,15 @@
       .sub a {
         color: #c4b5fd;
       }
+      .shot {
+        margin-top: 48px;
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid #ffffff14;
+        box-shadow: 0 30px 80px -30px #000c;
+      }
       .features {
-        margin-top: 56px;
+        margin-top: 48px;
         display: grid;
         gap: 18px;
         text-align: left;
@@ -101,7 +106,7 @@
   </head>
   <body>
     <main>
-      <div class="mark">🧠</div>
+      <img class="mark" src="icon.png" width="112" height="112" alt="Engram app icon" />
       <h1>Engram</h1>
       <p class="tagline">Memory for Claude Code.</p>
 
@@ -111,10 +116,12 @@
         <a href="https://github.com/dakl/engram">source on GitHub</a>
       </p>
 
+      <img class="shot" src="screenshot-list.png" alt="Engram showing the List lens — a faceted sidebar and a searchable list of memories" />
+
       <div class="features">
         <div>
-          <b>Local-first</b>
-          Everything lives in one SQLite file on your Mac. No accounts, no cloud, no sync.
+          <b>Local-first, no account</b>
+          Your memories live in a single SQLite file on your Mac — no sign-up, nothing to log into. Private and under your control.
         </div>
         <div>
           <b>Hooks into Claude Code</b>

@@ -13,6 +13,10 @@ trailing inspector views/edits the selected memory. Tags and a memory's source
 are clickable everywhere: tapping one jumps to that tag in the Tags lens. The
 `engram` CLI is the bridge the hooks shell out to.
 
+**Website:** [dakl.github.io/engram](https://dakl.github.io/engram/) — overview and the latest macOS download.
+
+![Engram — the List lens: faceted sidebar and a searchable list of memories](docs/screenshot-list.png)
+
 ## Architecture
 
 ```

@@ -335,6 +335,12 @@ public enum EngramPaths {
     }
 
     public static var defaultDatabaseURL: URL {
-        supportDirectory.appendingPathComponent("engram.sqlite")
+        // Dev/test escape hatch: `ENGRAM_DB=/path/to.sqlite` points the app and the
+        // CLI at an alternate store (e.g. a seeded demo DB for screenshots) without
+        // touching the real one. Unset in normal use → the single shared store.
+        if let override = ProcessInfo.processInfo.environment["ENGRAM_DB"], !override.isEmpty {
+            return URL(fileURLWithPath: (override as NSString).expandingTildeInPath)
+        }
+        return supportDirectory.appendingPathComponent("engram.sqlite")
     }
 }
