@@ -1,0 +1,40 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+# Only the (dependency-less) root package's resolved file; the app's
+# Package.resolved (under Engram.xcodeproj) is committed to pin dep versions.
+/Package.resolved
+
+# Xcode
+*.xcodeproj/project.pbxproj.bak
+xcuserdata/
+DerivedData/
+*.xcuserstate
+build/
+
+# macOS
+.DS_Store
+
+# Databases — never commit memory stores
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Local work loop (/work, /queue) — local-only, not shared
+remaining-tasks.md
+transcripts/
+
+# Migration scratch (mcp-memory-service → Engram); regenerate via scripts/
+memory-dump.md
+memory-relevant.md
+memory-slop.md
+/tmp/mem_catalog.txt
+
+# Icon-design scratch renders (Nano Banana ideation output)
+docs/design/renders/
+
+# LLVM profiling output
+*.profraw

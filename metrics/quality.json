@@ -1,0 +1,1135 @@
+{
+  "generated_at": "2026-06-03T05:53:03.340640+00:00",
+  "code": {
+    "files": 16,
+    "lines": {
+      "total": 2409,
+      "code": 1959,
+      "comment": 225,
+      "blank": 225
+    },
+    "complexity": {
+      "count": 82,
+      "mean": 2.6,
+      "max": 8.0,
+      "p50": 2.0,
+      "p75": 3.8,
+      "p90": 5.0
+    },
+    "length": {
+      "count": 82,
+      "mean": 12.8,
+      "max": 46.0,
+      "p50": 9.0,
+      "p75": 18.0,
+      "p90": 28.5
+    },
+    "by_file": [
+      {
+        "file": "ContentView.swift",
+        "lines": {
+          "total": 183,
+          "code": 166,
+          "comment": 3,
+          "blank": 14
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 3
+          },
+          {
+            "method": "get",
+            "ccn": 1,
+            "length": 1,
+            "nloc": 1
+          },
+          {
+            "method": "emptyState",
+            "ccn": 1,
+            "length": 6,
+            "nloc": 6
+          }
+        ]
+      },
+      {
+        "file": "EngramApp.swift",
+        "lines": {
+          "total": 19,
+          "code": 11,
+          "comment": 6,
+          "blank": 2
+        },
+        "functions": []
+      },
+      {
+        "file": "EngramModel.swift",
+        "lines": {
+          "total": 156,
+          "code": 125,
+          "comment": 17,
+          "blank": 14
+        },
+        "functions": [
+          {
+            "method": "set",
+            "ccn": 3,
+            "length": 18,
+            "nloc": 16
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "preview",
+            "ccn": 1,
+            "length": 21,
+            "nloc": 21
+          },
+          {
+            "method": "refresh",
+            "ccn": 3,
+            "length": 13,
+            "nloc": 13
+          },
+          {
+            "method": "search",
+            "ccn": 5,
+            "length": 19,
+            "nloc": 19
+          },
+          {
+            "method": "dismissError",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 3
+          },
+          {
+            "method": "delete",
+            "ccn": 3,
+            "length": 12,
+            "nloc": 12
+          },
+          {
+            "method": "runBundledEngram",
+            "ccn": 6,
+            "length": 24,
+            "nloc": 22
+          }
+        ]
+      },
+      {
+        "file": "FlowLayout.swift",
+        "lines": {
+          "total": 46,
+          "code": 40,
+          "comment": 1,
+          "blank": 5
+        },
+        "functions": [
+          {
+            "method": "sizeThatFits",
+            "ccn": 4,
+            "length": 21,
+            "nloc": 20
+          },
+          {
+            "method": "placeSubviews",
+            "ccn": 3,
+            "length": 17,
+            "nloc": 16
+          }
+        ]
+      },
+      {
+        "file": "HeaderBar.swift",
+        "lines": {
+          "total": 93,
+          "code": 81,
+          "comment": 3,
+          "blank": 9
+        },
+        "functions": []
+      },
+      {
+        "file": "InstallSheet.swift",
+        "lines": {
+          "total": 188,
+          "code": 168,
+          "comment": 3,
+          "blank": 17
+        },
+        "functions": [
+          {
+            "method": "run",
+            "ccn": 3,
+            "length": 10,
+            "nloc": 10
+          }
+        ]
+      },
+      {
+        "file": "StatCard.swift",
+        "lines": {
+          "total": 80,
+          "code": 72,
+          "comment": 2,
+          "blank": 6
+        },
+        "functions": []
+      },
+      {
+        "file": "Domain.swift",
+        "lines": {
+          "total": 152,
+          "code": 122,
+          "comment": 20,
+          "blank": 10
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 33,
+            "nloc": 33
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 7,
+            "nloc": 7
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 17,
+            "nloc": 17
+          },
+          {
+            "method": "==",
+            "ccn": 3,
+            "length": 9,
+            "nloc": 7
+          }
+        ]
+      },
+      {
+        "file": "Embedder.swift",
+        "lines": {
+          "total": 36,
+          "code": 24,
+          "comment": 7,
+          "blank": 5
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 2,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 2,
+            "nloc": 2
+          }
+        ]
+      },
+      {
+        "file": "MemoryStore.swift",
+        "lines": {
+          "total": 614,
+          "code": 505,
+          "comment": 65,
+          "blank": 44
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 7,
+            "nloc": 7
+          },
+          {
+            "method": "migrate",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "createSchema",
+            "ccn": 1,
+            "length": 36,
+            "nloc": 36
+          },
+          {
+            "method": "addVerificationColumns",
+            "ccn": 4,
+            "length": 19,
+            "nloc": 19
+          },
+          {
+            "method": "backfillFTS",
+            "ccn": 1,
+            "length": 13,
+            "nloc": 13
+          },
+          {
+            "method": "store",
+            "ccn": 2,
+            "length": 30,
+            "nloc": 29
+          },
+          {
+            "method": "update",
+            "ccn": 7,
+            "length": 11,
+            "nloc": 10
+          },
+          {
+            "method": "persistUpdate",
+            "ccn": 4,
+            "length": 33,
+            "nloc": 32
+          },
+          {
+            "method": "markVerified",
+            "ccn": 4,
+            "length": 24,
+            "nloc": 24
+          },
+          {
+            "method": "supersede",
+            "ccn": 4,
+            "length": 46,
+            "nloc": 40
+          },
+          {
+            "method": "delete",
+            "ccn": 2,
+            "length": 18,
+            "nloc": 18
+          },
+          {
+            "method": "fetch",
+            "ccn": 2,
+            "length": 17,
+            "nloc": 16
+          },
+          {
+            "method": "semanticCandidates",
+            "ccn": 4,
+            "length": 15,
+            "nloc": 15
+          },
+          {
+            "method": "lexicalCandidates",
+            "ccn": 5,
+            "length": 13,
+            "nloc": 13
+          },
+          {
+            "method": "fuse",
+            "ccn": 6,
+            "length": 29,
+            "nloc": 28
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 9,
+            "nloc": 9
+          },
+          {
+            "method": "init",
+            "ccn": 4,
+            "length": 18,
+            "nloc": 16
+          },
+          {
+            "method": "listByRisk",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "verify",
+            "ccn": 2,
+            "length": 14,
+            "nloc": 14
+          },
+          {
+            "method": "stats",
+            "ccn": 3,
+            "length": 33,
+            "nloc": 32
+          },
+          {
+            "method": "normalize",
+            "ccn": 2,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "insertMemoryRow",
+            "ccn": 1,
+            "length": 19,
+            "nloc": 19
+          },
+          {
+            "method": "insertTags",
+            "ccn": 3,
+            "length": 7,
+            "nloc": 7
+          },
+          {
+            "method": "insertVector",
+            "ccn": 2,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "insertFTS",
+            "ccn": 2,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "deleteFTS",
+            "ccn": 2,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "init",
+            "ccn": 3,
+            "length": 6,
+            "nloc": 5
+          },
+          {
+            "method": "recordEvent",
+            "ccn": 2,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "markAccessed",
+            "ccn": 4,
+            "length": 17,
+            "nloc": 17
+          },
+          {
+            "method": "floatBlob",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 3
+          }
+        ]
+      },
+      {
+        "file": "Ranking.swift",
+        "lines": {
+          "total": 86,
+          "code": 51,
+          "comment": 27,
+          "blank": 8
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 11,
+            "nloc": 11
+          },
+          {
+            "method": "score",
+            "ccn": 1,
+            "length": 18,
+            "nloc": 14
+          },
+          {
+            "method": "volatility",
+            "ccn": 6,
+            "length": 9,
+            "nloc": 9
+          },
+          {
+            "method": "rotRisk",
+            "ccn": 4,
+            "length": 7,
+            "nloc": 7
+          }
+        ]
+      },
+      {
+        "file": "SQLite.swift",
+        "lines": {
+          "total": 135,
+          "code": 107,
+          "comment": 9,
+          "blank": 19
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 5,
+            "length": 21,
+            "nloc": 19
+          },
+          {
+            "method": "deinit",
+            "ccn": 1,
+            "length": 1,
+            "nloc": 1
+          },
+          {
+            "method": "exec",
+            "ccn": 3,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "prepare",
+            "ccn": 2,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 4,
+            "nloc": 4
+          },
+          {
+            "method": "bind",
+            "ccn": 2,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "bind",
+            "ccn": 2,
+            "length": 4,
+            "nloc": 4
+          },
+          {
+            "method": "bind",
+            "ccn": 1,
+            "length": 4,
+            "nloc": 4
+          },
+          {
+            "method": "bindBlob",
+            "ccn": 1,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "step",
+            "ccn": 3,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "columnText",
+            "ccn": 2,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "columnDouble",
+            "ccn": 2,
+            "length": 4,
+            "nloc": 4
+          },
+          {
+            "method": "columnInt",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 3
+          }
+        ]
+      },
+      {
+        "file": "Verifier.swift",
+        "lines": {
+          "total": 104,
+          "code": 76,
+          "comment": 16,
+          "blank": 12
+        },
+        "functions": [
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "verdict",
+            "ccn": 8,
+            "length": 33,
+            "nloc": 30
+          },
+          {
+            "method": "looksLikeFilePath",
+            "ccn": 3,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "asOfDate",
+            "ccn": 2,
+            "length": 8,
+            "nloc": 8
+          }
+        ]
+      },
+      {
+        "file": "Setup.swift",
+        "lines": {
+          "total": 104,
+          "code": 78,
+          "comment": 12,
+          "blank": 14
+        },
+        "functions": [
+          {
+            "method": "installCLI",
+            "ccn": 4,
+            "length": 15,
+            "nloc": 15
+          },
+          {
+            "method": "runSetup",
+            "ccn": 3,
+            "length": 6,
+            "nloc": 6
+          },
+          {
+            "method": "installHook",
+            "ccn": 8,
+            "length": 38,
+            "nloc": 30
+          },
+          {
+            "method": "installSkills",
+            "ccn": 2,
+            "length": 12,
+            "nloc": 12
+          },
+          {
+            "method": "init",
+            "ccn": 1,
+            "length": 1,
+            "nloc": 1
+          }
+        ]
+      },
+      {
+        "file": "SkillTemplates.swift",
+        "lines": {
+          "total": 63,
+          "code": 40,
+          "comment": 2,
+          "blank": 21
+        },
+        "functions": []
+      },
+      {
+        "file": "main.swift",
+        "lines": {
+          "total": 350,
+          "code": 293,
+          "comment": 32,
+          "blank": 25
+        },
+        "functions": [
+          {
+            "method": "fail",
+            "ccn": 1,
+            "length": 4,
+            "nloc": 4
+          },
+          {
+            "method": "printJSON",
+            "ccn": 2,
+            "length": 7,
+            "nloc": 7
+          },
+          {
+            "method": "parseOptions",
+            "ccn": 4,
+            "length": 22,
+            "nloc": 22
+          },
+          {
+            "method": "memoryDict",
+            "ccn": 1,
+            "length": 18,
+            "nloc": 18
+          },
+          {
+            "method": "inferVerifiability",
+            "ccn": 5,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "init",
+            "ccn": 2,
+            "length": 10,
+            "nloc": 10
+          }
+        ]
+      }
+    ],
+    "hotspots": {
+      "by_complexity": [
+        {
+          "file": "Setup.swift",
+          "method": "installHook",
+          "ccn": 8,
+          "length": 38
+        },
+        {
+          "file": "Verifier.swift",
+          "method": "verdict",
+          "ccn": 8,
+          "length": 33
+        },
+        {
+          "file": "MemoryStore.swift",
+          "method": "update",
+          "ccn": 7,
+          "length": 11
+        },
+        {
+          "file": "MemoryStore.swift",
+          "method": "fuse",
+          "ccn": 6,
+          "length": 29
+        },
+        {
+          "file": "Ranking.swift",
+          "method": "volatility",
+          "ccn": 6,
+          "length": 9
+        }
+      ],
+      "by_length": [
+        {
+          "file": "MemoryStore.swift",
+          "method": "supersede",
+          "ccn": 4,
+          "length": 46
+        },
+        {
+          "file": "Setup.swift",
+          "method": "installHook",
+          "ccn": 8,
+          "length": 38
+        },
+        {
+          "file": "MemoryStore.swift",
+          "method": "createSchema",
+          "ccn": 1,
+          "length": 36
+        },
+        {
+          "file": "Verifier.swift",
+          "method": "verdict",
+          "ccn": 8,
+          "length": 33
+        },
+        {
+          "file": "MemoryStore.swift",
+          "method": "persistUpdate",
+          "ccn": 4,
+          "length": 33
+        }
+      ]
+    }
+  },
+  "tests": {
+    "files": 6,
+    "lines": {
+      "total": 436,
+      "code": 319,
+      "comment": 39,
+      "blank": 78
+    },
+    "complexity": {
+      "count": 36,
+      "mean": 1.0,
+      "max": 1.0,
+      "p50": 1.0,
+      "p75": 1.0,
+      "p90": 1.0
+    },
+    "length": {
+      "count": 36,
+      "mean": 9.5,
+      "max": 38.0,
+      "p50": 8.0,
+      "p75": 12.2,
+      "p90": 16.5
+    },
+    "by_file": [
+      {
+        "file": "EngramTests.swift",
+        "lines": {
+          "total": 17,
+          "code": 6,
+          "comment": 7,
+          "blank": 4
+        },
+        "functions": [
+          {
+            "method": "example",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 2
+          }
+        ]
+      },
+      {
+        "file": "EngramUITests.swift",
+        "lines": {
+          "total": 41,
+          "code": 19,
+          "comment": 13,
+          "blank": 9
+        },
+        "functions": [
+          {
+            "method": "setUpWithError",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 3
+          },
+          {
+            "method": "tearDownWithError",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 2
+          },
+          {
+            "method": "testExample",
+            "ccn": 1,
+            "length": 7,
+            "nloc": 4
+          },
+          {
+            "method": "testLaunchPerformance",
+            "ccn": 1,
+            "length": 6,
+            "nloc": 5
+          }
+        ]
+      },
+      {
+        "file": "EngramUITestsLaunchTests.swift",
+        "lines": {
+          "total": 33,
+          "code": 18,
+          "comment": 8,
+          "blank": 7
+        },
+        "functions": [
+          {
+            "method": "setUpWithError",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 3
+          },
+          {
+            "method": "testLaunch",
+            "ccn": 1,
+            "length": 12,
+            "nloc": 8
+          }
+        ]
+      },
+      {
+        "file": "MemoryStoreTests.swift",
+        "lines": {
+          "total": 212,
+          "code": 166,
+          "comment": 5,
+          "blank": 41
+        },
+        "functions": [
+          {
+            "method": "makeTempStore",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "storeThenFetchReturnsSemanticMatch",
+            "ccn": 1,
+            "length": 11,
+            "nloc": 9
+          },
+          {
+            "method": "hybridSearchFindsExactTermSemanticAloneMissed",
+            "ccn": 1,
+            "length": 14,
+            "nloc": 11
+          },
+          {
+            "method": "fetchMarksMemoriesAccessed",
+            "ccn": 1,
+            "length": 11,
+            "nloc": 9
+          },
+          {
+            "method": "softDeleteHidesFromFetchButKeepsTombstone",
+            "ccn": 1,
+            "length": 13,
+            "nloc": 10
+          },
+          {
+            "method": "updateRevisesContentAndIsSearchableUnderNewMeaning",
+            "ccn": 1,
+            "length": 19,
+            "nloc": 15
+          },
+          {
+            "method": "updateUnknownIdReturnsNil",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "verificationFieldsRoundTrip",
+            "ccn": 1,
+            "length": 18,
+            "nloc": 16
+          },
+          {
+            "method": "migrationIsIdempotentAcrossStoreInstances",
+            "ccn": 1,
+            "length": 19,
+            "nloc": 16
+          },
+          {
+            "method": "markVerifiedSetsVerifiedAtAndConfidence",
+            "ccn": 1,
+            "length": 15,
+            "nloc": 12
+          },
+          {
+            "method": "markVerifiedUnknownIdReturnsNil",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "supersedeLinksOldAndDropsItFromActive",
+            "ccn": 1,
+            "length": 38,
+            "nloc": 30
+          },
+          {
+            "method": "supersedeUnknownIdReturnsNil",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "statsReflectStoredMemories",
+            "ccn": 1,
+            "length": 14,
+            "nloc": 12
+          }
+        ]
+      },
+      {
+        "file": "RankingTests.swift",
+        "lines": {
+          "total": 53,
+          "code": 45,
+          "comment": 2,
+          "blank": 6
+        },
+        "functions": [
+          {
+            "method": "oldCodeGroundedOutranksFresh",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "excludedClassesScoreZero",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "higherAccessCountRaisesRisk",
+            "ccn": 1,
+            "length": 7,
+            "nloc": 7
+          },
+          {
+            "method": "verifiedAtTakesPrecedenceOverCreatedAt",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 7
+          },
+          {
+            "method": "descendingRiskOrdering",
+            "ccn": 1,
+            "length": 13,
+            "nloc": 12
+          }
+        ]
+      },
+      {
+        "file": "VerifierTests.swift",
+        "lines": {
+          "total": 80,
+          "code": 65,
+          "comment": 4,
+          "blank": 11
+        },
+        "functions": [
+          {
+            "method": "presentPaths",
+            "ccn": 1,
+            "length": 3,
+            "nloc": 3
+          },
+          {
+            "method": "userConfirmOnlyIsInconclusive",
+            "ccn": 1,
+            "length": 7,
+            "nloc": 7
+          },
+          {
+            "method": "timelessIsInconclusive",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "existingAnchorFileIsConfirmed",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "missingAnchorFileIsContradicted",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 8
+          },
+          {
+            "method": "anchorWithMissingRepoRootIsInconclusive",
+            "ccn": 1,
+            "length": 10,
+            "nloc": 8
+          },
+          {
+            "method": "nonPathAnchorIsNotTreatedAsFile",
+            "ccn": 1,
+            "length": 8,
+            "nloc": 7
+          },
+          {
+            "method": "oldAsOfDateIsStale",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "recentAsOfDateIsInconclusive",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          },
+          {
+            "method": "noSignalsIsInconclusive",
+            "ccn": 1,
+            "length": 5,
+            "nloc": 5
+          }
+        ]
+      }
+    ],
+    "hotspots": {
+      "by_complexity": [
+        {
+          "file": "RankingTests.swift",
+          "method": "oldCodeGroundedOutranksFresh",
+          "ccn": 1,
+          "length": 5
+        },
+        {
+          "file": "RankingTests.swift",
+          "method": "excludedClassesScoreZero",
+          "ccn": 1,
+          "length": 8
+        },
+        {
+          "file": "RankingTests.swift",
+          "method": "higherAccessCountRaisesRisk",
+          "ccn": 1,
+          "length": 7
+        },
+        {
+          "file": "RankingTests.swift",
+          "method": "verifiedAtTakesPrecedenceOverCreatedAt",
+          "ccn": 1,
+          "length": 8
+        },
+        {
+          "file": "RankingTests.swift",
+          "method": "descendingRiskOrdering",
+          "ccn": 1,
+          "length": 13
+        }
+      ],
+      "by_length": [
+        {
+          "file": "MemoryStoreTests.swift",
+          "method": "supersedeLinksOldAndDropsItFromActive",
+          "ccn": 1,
+          "length": 38
+        },
+        {
+          "file": "MemoryStoreTests.swift",
+          "method": "updateRevisesContentAndIsSearchableUnderNewMeaning",
+          "ccn": 1,
+          "length": 19
+        },
+        {
+          "file": "MemoryStoreTests.swift",
+          "method": "migrationIsIdempotentAcrossStoreInstances",
+          "ccn": 1,
+          "length": 19
+        },
+        {
+          "file": "MemoryStoreTests.swift",
+          "method": "verificationFieldsRoundTrip",
+          "ccn": 1,
+          "length": 18
+        },
+        {
+          "file": "MemoryStoreTests.swift",
+          "method": "markVerifiedSetsVerifiedAtAndConfidence",
+          "ccn": 1,
+          "length": 15
+        }
+      ]
+    }
+  }
+}

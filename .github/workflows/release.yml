@@ -1,0 +1,134 @@
+name: Release
+
+# Builds, signs, notarizes, and publishes a macOS release, then updates the
+# Sparkle appcast on GitHub Pages. See ADR 0010.
+#
+# Triggered only by pushing a v* tag (via `make release-*`) or a manual dispatch
+# — NEVER by pull_request, so fork PRs can never reach the signing secrets.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write # create the GitHub Release and push the appcast commit
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Import Developer ID certificate into a throwaway keychain
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          echo "$CSC_LINK" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$CSC_KEY_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/productsign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | sed s/\"//g)
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+      - name: Fetch Sparkle signing tools
+        run: |
+          gh release download --repo sparkle-project/Sparkle --pattern 'Sparkle-*.tar.xz' --dir "$RUNNER_TEMP" --clobber
+          tar -xf "$RUNNER_TEMP"/Sparkle-*.tar.xz -C "$RUNNER_TEMP"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Archive & export (Developer ID, hardened runtime)
+        run: |
+          xcodebuild -project Engram/Engram.xcodeproj -scheme Engram \
+            -configuration Release -destination 'generic/platform=macOS' \
+            -archivePath "$RUNNER_TEMP/Engram.xcarchive" archive \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Developer ID Application" \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Engram.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist .github/ExportOptions.plist
+
+      - name: Read version from the built app
+        id: ver
+        run: |
+          PLIST="$RUNNER_TEMP/export/Engram.app/Contents/Info.plist"
+          SHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")
+          BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")
+          MINSYS=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$PLIST" 2>/dev/null || echo "")
+          echo "short=$SHORT" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "minsys=$MINSYS" >> "$GITHUB_OUTPUT"
+
+      - name: Notarize & staple
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_SPECIFIC_PASSWORD: ${{ secrets.APP_SPECIFIC_PASSWORD }}
+        run: |
+          APP="$RUNNER_TEMP/export/Engram.app"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
+            --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APP_SPECIFIC_PASSWORD" --wait
+          xcrun stapler staple "$APP"
+
+      - name: Package the stapled app
+        id: pkg
+        run: |
+          ZIP="Engram-${{ steps.ver.outputs.short }}.zip"
+          ditto -c -k --keepParent "$RUNNER_TEMP/export/Engram.app" "$ZIP"
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+
+      - name: Sign the archive for Sparkle
+        id: sign
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          OUT=$("$RUNNER_TEMP"/bin/sign_update -s "$SPARKLE_PRIVATE_KEY" "${{ steps.pkg.outputs.zip }}")
+          SIG=$(echo "$OUT" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')
+          LEN=$(echo "$OUT" | sed -n 's/.*length="\([^"]*\)".*/\1/p')
+          echo "signature=$SIG" >> "$GITHUB_OUTPUT"
+          echo "length=$LEN" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release & upload the archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" "${{ steps.pkg.outputs.zip }}" \
+            --title "Engram ${{ steps.ver.outputs.short }}" --generate-notes
+
+      - name: Update appcast on GitHub Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          git checkout "$DEFAULT_BRANCH"
+          git pull --ff-only origin "$DEFAULT_BRANCH"
+          URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.pkg.outputs.zip }}"
+          python3 scripts/update_appcast.py \
+            --appcast docs/appcast.xml \
+            --version "${{ steps.ver.outputs.build }}" \
+            --short-version "${{ steps.ver.outputs.short }}" \
+            --url "$URL" \
+            --signature "${{ steps.sign.outputs.signature }}" \
+            --length "${{ steps.sign.outputs.length }}" \
+            --min-system "${{ steps.ver.outputs.minsys }}"
+          git add docs/appcast.xml
+          git commit -m "chore(appcast): publish ${{ steps.ver.outputs.short }}"
+          git push origin "$DEFAULT_BRANCH"
