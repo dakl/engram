@@ -98,7 +98,12 @@ jobs:
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
-          OUT=$("$RUNNER_TEMP"/bin/sign_update -s "$SPARKLE_PRIVATE_KEY" "${{ steps.pkg.outputs.zip }}")
+          # Current sign_update removed the -s (key-as-argument) flag; pass the
+          # private key via a file with --ed-key-file instead (strip any stray newline).
+          KEYFILE="$RUNNER_TEMP/sparkle_ed_key"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | tr -d '\r\n' > "$KEYFILE"
+          OUT=$("$RUNNER_TEMP"/bin/sign_update --ed-key-file "$KEYFILE" "${{ steps.pkg.outputs.zip }}")
+          rm -f "$KEYFILE"
           SIG=$(echo "$OUT" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p')
           LEN=$(echo "$OUT" | sed -n 's/.*length="\([^"]*\)".*/\1/p')
           echo "signature=$SIG" >> "$GITHUB_OUTPUT"
