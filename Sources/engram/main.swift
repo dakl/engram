@@ -443,9 +443,12 @@ do {
                 !prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             else { exit(0) }
             let results = (try? await store.fetch(query: prompt, limit: 8, recordAccess: false)) ?? []
-            // Confidence gate: a real lexical (keyword) hit, or a tight semantic
-            // distance. With weak embeddings the lexical signal carries this.
-            let confident = results.filter { $0.lexicalMatch || $0.distance < 0.45 }.prefix(3)
+            // Confidence gate (see `RecallGate`, ADR 0021): keeps off-topic
+            // memories — and their token cost — out, since this runs on every
+            // prompt. Thresholds are calibrated per embedder (its distances have
+            // their own scale), keyed off the live signature.
+            let gateConfig = RecallGate.config(forEmbedderSignature: await store.embedderSignature)
+            let confident = RecallGate.select(results, query: prompt, config: gateConfig)
 
             // Two independent sections: recalled notes (when confident) and a
             // periodic reflection nudge (every Nth prompt). Either may be empty.

@@ -1,6 +1,7 @@
 # 5. Recall via a gated, read-only, per-request hook (no /recall skill)
 
-- **Status:** Accepted
+- **Status:** Accepted — gate criteria refined by ADR 0021 (the per-request,
+  read-only hook itself stands).
 - **Date:** 2026-06-02
 - **Deciders:** Daniel Klevebring
 - **Supersedes:** the recall-surface decision in ADR 0001 (the store decision —

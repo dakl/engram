@@ -133,8 +133,10 @@ Recall and store use different mechanisms because they have opposite ergonomics
 
 A `UserPromptSubmit` hook runs `engram hook recall` before each prompt: it
 hybrid-searches with the prompt as the query and injects only the *confident*
-matches (a keyword hit or tight semantic distance, top ≤3), soft-framed, and
-**read-only with respect to ranking** so it never inflates `access_count`.
+matches (top ≤3), soft-framed, and **read-only with respect to ranking** so it
+never inflates `access_count`. The confidence gate (`RecallGate`) is calibrated
+per embedder — its distance thresholds are tuned to the live model's scale via
+the offline eval (`swift run engram-eval`), ADR 0021.
 Off-topic prompts inject nothing — it exits 0 silently, so it can't block or
 spam. (It does record a *retrieval-activity* row — see below — which is
 decoupled from ranking, ADR 0015.)

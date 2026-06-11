@@ -31,6 +31,11 @@ let package = Package(
             name: "engram",
             dependencies: ["EngramCore"]
         ),
+        .executableTarget(
+            name: "engram-eval",
+            dependencies: ["EngramCore"],
+            resources: [.process("Resources")]
+        ),
         .testTarget(
             name: "EngramCoreTests",
             dependencies: ["EngramCore"]

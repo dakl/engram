@@ -46,6 +46,28 @@ Ideas to explore:
 *Open questions:* detection accuracy/cost; when to run (on store, on a schedule,
 on demand). → **ADR before building.**
 
+### 3. Bundle our own embedder (replace NLContextualEmbedding + fallback)
+*Problem:* the embedder is Apple's `NLContextualEmbedding`, whose weights
+download on demand — so the app needs a degraded `word-512` fallback for the
+gap, the two backends live on different distance scales (forcing the
+embedder-relative gate of ADR 0021), and embeddings are non-deterministic across
+machines (the `engram-eval` numbers can't be a cross-machine benchmark).
+
+Ideas to explore:
+- Bundle a small sentence-transformer (e.g. `all-MiniLM-L6-v2`, 384-dim) via
+  Core ML, or a quantized embeddings runtime; drop `NLContextualEmbedding` *and*
+  the fallback entirely.
+- Benefits: deterministic/reproducible vectors → stable, checked-in gate
+  threshold and a real eval benchmark; no async asset download; one distance
+  scale; likely better short-text retrieval (tighter than the ~0.1 contextual
+  band).
+- Costs: app size (+~25–90 MB), owning the runtime/conversion, revisiting the
+  "no bundled model" spirit of ADR 0003/0004, and a re-embed migration (already
+  supported via `signature` change, ADR 0012).
+
+*Open questions:* model choice + license; Core ML vs. other runtime; size budget
+for the notarized app. → **ADR (supersedes ADR 0012's backend) before building.**
+
 ### 3. Memory graph + UI inspection → **ADR 0007 (Accepted)**
 *Problem:* memories are currently a flat list; relationships are implicit.
 

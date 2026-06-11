@@ -25,6 +25,10 @@ public actor MemoryStore {
     /// app warn that semantic recall is weaker until `reindex()` (or a relaunch).
     public var isUsingFallbackEmbedder: Bool { embedder.isFallback }
 
+    /// The live embedder's signature (backend + dimension), e.g. `contextual-512`.
+    /// Drives embedder-relative recall gating (`RecallGate.config(for:)`).
+    public var embedderSignature: String { embedder.signature }
+
     /// Rebuilds the embedder from scratch — picking up contextual-model assets
     /// that have downloaded since launch — and re-embeds every memory if the
     /// backend changed (the migration is signature-gated, so it's a cheap no-op
@@ -827,29 +831,13 @@ public actor MemoryStore {
         }
     }
 
-    /// Common English words that would otherwise cause spurious lexical matches
-    /// (e.g. "the" matching nearly every memory).
-    private static let stopwords: Set<String> = [
-        "the", "a", "an", "and", "or", "but", "of", "to", "in", "on", "for", "with",
-        "as", "at", "by", "from", "is", "are", "was", "were", "be", "been", "being",
-        "do", "does", "did", "doing", "what", "which", "who", "whom", "whose", "how",
-        "why", "when", "where", "this", "that", "these", "those", "it", "its", "we",
-        "you", "your", "our", "my", "me", "i", "they", "them", "their", "he", "she",
-        "his", "her", "if", "then", "than", "so", "about", "into", "over", "can",
-        "could", "should", "would", "will", "have", "has", "had", "not", "no",
-    ]
-
     /// Turns arbitrary user text into a safe FTS5 MATCH expression: keep
     /// alphanumeric tokens that aren't stopwords, OR them together. Single-char
     /// tokens are kept (only stopwords like "a"/"i" are dropped) so a one-letter
     /// identifier or symbol query still has a lexical leg instead of falling back
     /// to semantic-only (P2 #9). Returns nil if there are no usable tokens.
     static func ftsMatchExpression(for query: String) -> String? {
-        let tokens = query
-            .lowercased()
-            .split { !$0.isLetter && !$0.isNumber }
-            .map(String.init)
-            .filter { !$0.isEmpty && !stopwords.contains($0) }
+        let tokens = RecallText.tokens(query)
         guard !tokens.isEmpty else { return nil }
         // Quote each token so FTS5 treats it as a literal (no operator parsing).
         return tokens.map { "\"\($0)\"" }.joined(separator: " OR ")

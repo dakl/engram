@@ -14,7 +14,7 @@ supersedes the old one (and update the old one's status to `Superseded by NNNN`)
 | [0002](0002-keep-docs-in-sync.md) | Keep documentation in sync with the code | Accepted |
 | [0003](0003-mac-app-distribution-model.md) | Mac app distribution: non-sandboxed dev-tool that installs the CLI/hooks/skills | Accepted |
 | [0004](0004-hybrid-retrieval.md) | Hybrid retrieval: lexical (FTS5/BM25) + semantic (sqlite-vec), fused with RRF | Accepted (embedder superseded by 0012) |
-| [0005](0005-recall-via-gated-per-request-hook.md) | Recall via a gated, read-only, per-request hook (no /recall skill) | Accepted |
+| [0005](0005-recall-via-gated-per-request-hook.md) | Recall via a gated, read-only, per-request hook (no /recall skill) | Accepted (gate criteria refined by 0021) |
 | [0006](0006-storage-concurrency-model.md) | Storage concurrency model: `MemoryStore` as an `actor` | Accepted |
 | [0007](0007-memory-graph-view.md) | Memory graph: one derived graph + community hierarchy, three read-only views | Accepted (layout engine superseded by 0009; view enumeration by 0011) |
 | [0008](0008-memory-verification-decay.md) | Memory verification & decay subsystem (the `/dream` design) | Accepted |
@@ -30,6 +30,7 @@ supersedes the old one (and update the old one's status to `Superseded by NNNN`)
 | [0018](0018-collection-exploration-map-and-structure.md) | Collection exploration: Semantic Map + Structure lens (supersedes 0011 + 0017 Tree/Graph) | Accepted (Map/Structure superseded by 0019) |
 | [0019](0019-tag-centric-exploration.md) | Tag-centric exploration: Tags list + bipartite tag-graph (supersedes 0018 Map/Structure) | Accepted |
 | [0020](0020-unified-activity-timeline.md) | Unified Activity timeline: reads + writes in one stream (extends 0015) | Accepted |
+| [0021](0021-embedder-relative-recall-gate.md) | Embedder-relative recall gate, calibrated by offline eval (refines 0005's gate) | Accepted |
 
 ## Writing a new ADR
 
