@@ -90,13 +90,18 @@ final class EngramModel {
     var activityLookback: Lookback = .h1
     private(set) var activityRows: [ActivityRow] = []
 
+    /// The specific activity row the user last clicked, tracked separately from
+    /// `selectedMemory` so the Table highlight stays on the exact clicked event
+    /// rather than always snapping to the first (newest) event for that memory.
+    var selectedActivityRowID: String?
+
     /// The full prompt that retrieved the selected memory, surfaced above it in
     /// the inspector (the Activity table truncates the Query column). Only set in
     /// the Activity lens, so it self-clears when switching lenses or selecting a
-    /// memory elsewhere. Mirrors the Activity selection binding's memory→row match.
+    /// memory elsewhere.
     var selectedRetrievalQuery: String? {
-        guard section == .activity, let selected = selectedMemory else { return nil }
-        let query = activityRows.first { $0.memory?.id == selected.id }?.event.query
+        guard section == .activity, let rowID = selectedActivityRowID else { return nil }
+        let query = activityRows.first { $0.id == rowID }?.event.query
         return query?.isEmpty == true ? nil : query
     }
 
@@ -151,6 +156,12 @@ final class EngramModel {
         self.memories = sampleMemories
     }
 
+    /// Test-only init: wraps a caller-supplied store without starting a watcher
+    /// or loading initial data, so tests control the exact state.
+    init(testStore: MemoryStore) {
+        self.store = testStore
+    }
+
     static func preview() -> EngramModel {
         EngramModel(
             sampleStats: MemoryStats(
@@ -176,24 +187,32 @@ final class EngramModel {
     /// Reloads stats and the recent-memories list. The store work runs on the
     /// `MemoryStore` actor (off the main actor); results publish back on main.
     func refresh() {
+        Task { await _refreshBody() }
+    }
+
+    /// Awaitable body of `refresh` — used directly by tests to avoid the
+    /// fire-and-forget Task wrapper.
+    func refreshForTesting() async {
+        await _refreshBody()
+    }
+
+    private func _refreshBody() async {
         guard let store else { return }
-        Task {
-            do {
-                let stats = try await store.stats()
-                let memories = try await store.list(limit: 200)
-                let fallback = await store.isUsingFallbackEmbedder
-                self.stats = stats
-                self.memories = memories
-                self.usingFallbackEmbedder = fallback
-                // NB: we deliberately do NOT build the semantic graph/communities
-                // here. `store.graph()` re-embeds every memory, and this runs on
-                // every 1s StoreWatcher tick — a real perf/battery cliff — yet
-                // nothing consumed `graph`/`clusters` after the tag-centric redesign
-                // (ADR 0019). The Map builds its own tag graph from `memories`.
-                if self.section == .activity { self.loadActivity() }
-            } catch {
-                self.errorMessage = "\(error)"
-            }
+        do {
+            let stats = try await store.stats()
+            let memories = try await store.list(limit: 200)
+            let fallback = await store.isUsingFallbackEmbedder
+            self.stats = stats
+            self.memories = memories
+            self.usingFallbackEmbedder = fallback
+            // NB: we deliberately do NOT build the semantic graph/communities
+            // here. `store.graph()` re-embeds every memory, and this runs on
+            // every 1s StoreWatcher tick — a real perf/battery cliff — yet
+            // nothing consumed `graph`/`clusters` after the tag-centric redesign
+            // (ADR 0019). The Map builds its own tag graph from `memories`.
+            if self.section == .activity { self.loadActivity() }
+        } catch {
+            self.errorMessage = "\(error)"
         }
     }
 
@@ -220,23 +239,31 @@ final class EngramModel {
     /// window (ADR 0015/0020), resolving each event's memory (tombstoned ones still
     /// resolve, shown dimmed; truly missing ones render as deleted). Read-only.
     func loadActivity() {
+        Task { await _loadActivityBody() }
+    }
+
+    /// Awaitable body of `loadActivity` — used directly by tests to avoid the
+    /// fire-and-forget Task wrapper.
+    func loadActivityForTesting() async {
+        await _loadActivityBody()
+    }
+
+    private func _loadActivityBody() async {
         guard let store else { return }
         let since = Date().addingTimeInterval(-activityLookback.interval)
-        Task {
-            do {
-                let events = try await store.activity(since: since)
-                var resolved: [UUID: Memory?] = [:]
-                var rows: [ActivityRow] = []
-                for event in events {
-                    if resolved[event.memoryID] == nil {
-                        resolved[event.memoryID] = await store.fetch(id: event.memoryID)
-                    }
-                    rows.append(ActivityRow(event: event, memory: resolved[event.memoryID] ?? nil))
+        do {
+            let events = try await store.activity(since: since)
+            var resolved: [UUID: Memory?] = [:]
+            var rows: [ActivityRow] = []
+            for event in events {
+                if resolved[event.memoryID] == nil {
+                    resolved[event.memoryID] = await store.fetch(id: event.memoryID)
                 }
-                self.activityRows = rows
-            } catch {
-                self.errorMessage = "\(error)"
+                rows.append(ActivityRow(event: event, memory: resolved[event.memoryID] ?? nil))
             }
+            self.activityRows = rows
+        } catch {
+            self.errorMessage = "\(error)"
         }
     }
 

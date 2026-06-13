@@ -57,20 +57,29 @@ struct ActivityView: View {
         }
         .onAppear { model.loadActivity() }
         .onChange(of: model.activityLookback) { _, _ in model.loadActivity() }
+        .onChange(of: model.selectedMemory) { _, new in
+            // When the inspector is closed from any lens, clear the Activity row highlight.
+            if new == nil { model.selectedActivityRowID = nil }
+        }
     }
 
     private func isGone(_ row: EngramModel.ActivityRow) -> Bool {
         row.memory == nil || row.memory?.deletedAt != nil
     }
 
-    /// Table selection (a single row id) projected to the inspector's selected
-    /// memory; gone memories don't select.
+    /// Table selection bound to `model.selectedActivityRowID` — the exact row the
+    /// user clicked — rather than searching `activityRows` by memory ID, which
+    /// always returned the first (newest) event for that memory (issue #2).
     private var selection: Binding<EngramModel.ActivityRow.ID?> {
         Binding(
-            get: { model.selectedMemory.flatMap { selected in
-                model.activityRows.first { $0.memory?.id == selected.id }?.id
-            } },
+            get: {
+                // Validate the stored ID still exists after a reload; return nil if stale.
+                guard let id = model.selectedActivityRowID,
+                      model.activityRows.contains(where: { $0.id == id }) else { return nil }
+                return id
+            },
             set: { id in
+                model.selectedActivityRowID = id
                 guard let id, let row = model.activityRows.first(where: { $0.id == id }),
                       let memory = row.memory, memory.deletedAt == nil else {
                     model.selectedMemory = nil
