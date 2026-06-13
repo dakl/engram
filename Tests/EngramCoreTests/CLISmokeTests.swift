@@ -77,8 +77,9 @@ private func tempDB() -> URL {
     let data = Data(out.utf8)
     let json = try #require(try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                             "stats --json must emit valid JSON")
-    let total = json["totalActive"] as? Int
-    #expect(total == 1, "totalActive should be 1 after one store")
+    // CLI uses snake_case keys (see main.swift printJSON call for "stats").
+    let total = json["total_active"] as? Int
+    #expect(total == 1, "total_active should be 1 after one store")
 }
 
 /// `engram activity` exits 0 and lists the store event.
