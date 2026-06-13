@@ -156,6 +156,12 @@ final class EngramModel {
         self.memories = sampleMemories
     }
 
+    /// Test-only init: wraps a caller-supplied store without starting a watcher
+    /// or loading initial data, so tests control the exact state.
+    init(testStore: MemoryStore) {
+        self.store = testStore
+    }
+
     static func preview() -> EngramModel {
         EngramModel(
             sampleStats: MemoryStats(
@@ -225,23 +231,31 @@ final class EngramModel {
     /// window (ADR 0015/0020), resolving each event's memory (tombstoned ones still
     /// resolve, shown dimmed; truly missing ones render as deleted). Read-only.
     func loadActivity() {
+        Task { await _loadActivityBody() }
+    }
+
+    /// Awaitable body of `loadActivity` — used directly by tests to avoid the
+    /// fire-and-forget Task wrapper.
+    func loadActivityForTesting() async {
+        await _loadActivityBody()
+    }
+
+    private func _loadActivityBody() async {
         guard let store else { return }
         let since = Date().addingTimeInterval(-activityLookback.interval)
-        Task {
-            do {
-                let events = try await store.activity(since: since)
-                var resolved: [UUID: Memory?] = [:]
-                var rows: [ActivityRow] = []
-                for event in events {
-                    if resolved[event.memoryID] == nil {
-                        resolved[event.memoryID] = await store.fetch(id: event.memoryID)
-                    }
-                    rows.append(ActivityRow(event: event, memory: resolved[event.memoryID] ?? nil))
+        do {
+            let events = try await store.activity(since: since)
+            var resolved: [UUID: Memory?] = [:]
+            var rows: [ActivityRow] = []
+            for event in events {
+                if resolved[event.memoryID] == nil {
+                    resolved[event.memoryID] = await store.fetch(id: event.memoryID)
                 }
-                self.activityRows = rows
-            } catch {
-                self.errorMessage = "\(error)"
+                rows.append(ActivityRow(event: event, memory: resolved[event.memoryID] ?? nil))
             }
+            self.activityRows = rows
+        } catch {
+            self.errorMessage = "\(error)"
         }
     }
 
