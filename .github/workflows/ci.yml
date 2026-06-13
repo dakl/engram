@@ -1,0 +1,31 @@
+name: CI
+
+# Runs the full test suite on every PR and every push to main.
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test EngramCore + CLI (swift test)
+        run: swift test
+
+      - name: Test Engram app target (xcodebuild)
+        run: |
+          xcodebuild test \
+            -project Engram/Engram.xcodeproj \
+            -scheme Engram \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
