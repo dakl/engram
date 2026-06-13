@@ -187,24 +187,32 @@ final class EngramModel {
     /// Reloads stats and the recent-memories list. The store work runs on the
     /// `MemoryStore` actor (off the main actor); results publish back on main.
     func refresh() {
+        Task { await _refreshBody() }
+    }
+
+    /// Awaitable body of `refresh` — used directly by tests to avoid the
+    /// fire-and-forget Task wrapper.
+    func refreshForTesting() async {
+        await _refreshBody()
+    }
+
+    private func _refreshBody() async {
         guard let store else { return }
-        Task {
-            do {
-                let stats = try await store.stats()
-                let memories = try await store.list(limit: 200)
-                let fallback = await store.isUsingFallbackEmbedder
-                self.stats = stats
-                self.memories = memories
-                self.usingFallbackEmbedder = fallback
-                // NB: we deliberately do NOT build the semantic graph/communities
-                // here. `store.graph()` re-embeds every memory, and this runs on
-                // every 1s StoreWatcher tick — a real perf/battery cliff — yet
-                // nothing consumed `graph`/`clusters` after the tag-centric redesign
-                // (ADR 0019). The Map builds its own tag graph from `memories`.
-                if self.section == .activity { self.loadActivity() }
-            } catch {
-                self.errorMessage = "\(error)"
-            }
+        do {
+            let stats = try await store.stats()
+            let memories = try await store.list(limit: 200)
+            let fallback = await store.isUsingFallbackEmbedder
+            self.stats = stats
+            self.memories = memories
+            self.usingFallbackEmbedder = fallback
+            // NB: we deliberately do NOT build the semantic graph/communities
+            // here. `store.graph()` re-embeds every memory, and this runs on
+            // every 1s StoreWatcher tick — a real perf/battery cliff — yet
+            // nothing consumed `graph`/`clusters` after the tag-centric redesign
+            // (ADR 0019). The Map builds its own tag graph from `memories`.
+            if self.section == .activity { self.loadActivity() }
+        } catch {
+            self.errorMessage = "\(error)"
         }
     }
 

@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build CLI (needed by CLISmokeTests)
+        run: swift build --product engram
+
       - name: Test EngramCore + CLI (swift test)
         run: swift test
 

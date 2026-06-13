@@ -106,30 +106,56 @@ struct EngramTests {
         #expect(model.selectedRetrievalQuery != "second question")
     }
 
-    // MARK: - Activity state coordination
+    // MARK: - Stale selection
 
-    /// When `selectedMemory` is cleared (e.g. inspector closed), `selectedActivityRowID`
-    /// must also be cleared so the Table shows no highlight.
-    @Test @MainActor func clearingSelectedMemoryAlsoClearsRowID() async throws {
+    /// A row ID that no longer exists in activityRows (e.g. after a lookback
+    /// reload) must not surface a phantom retrieval query in the inspector.
+    @Test @MainActor func selectedRetrievalQueryIsNilForStaleRowID() {
+        let model = EngramModel.preview()
+        model.section = .activity
+        // activityRows is empty in preview; this ID doesn't exist.
+        model.selectedActivityRowID = "r:gone"
+        #expect(model.selectedRetrievalQuery == nil)
+    }
+
+    // MARK: - Model lifecycle
+
+    /// refresh() reads from a real store and populates model.memories.
+    @Test @MainActor func refreshPopulatesMemories() async throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("engram-model-test-\(UUID().uuidString).sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try MemoryStore(url: url)
 
         let model = EngramModel(testStore: store)
-        let memory = try await store.store(content: "A memory.", tags: [])
-        try await store.recordRetrieval(memoryIDs: [memory.id], source: .recall, query: "q")
-        await model.loadActivityForTesting()
+        #expect(model.memories.isEmpty)
 
-        let row = try #require(model.activityRows.first)
-        model.selectedActivityRowID = row.id
-        model.selectedMemory = memory
-        #expect(model.selectedActivityRowID != nil)
+        _ = try await store.store(content: "Hello world.", tags: ["test"])
+        await model.refreshForTesting()
 
-        // Closing the inspector nils selectedMemory; the view's onChange propagates
-        // that to selectedActivityRowID. Simulate it here directly.
-        model.selectedMemory = nil
-        model.selectedActivityRowID = nil
-        #expect(model.selectedActivityRowID == nil)
+        #expect(model.memories.count == 1)
+        #expect(model.memories.first?.content == "Hello world.")
+        #expect(model.stats.totalActive == 1)
+    }
+
+    /// Deleting a memory and calling refresh removes it from model.memories and
+    /// decrements the stats counter.
+    @Test @MainActor func refreshAfterDeleteRemovesMemory() async throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("engram-model-test-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = try MemoryStore(url: url)
+
+        let model = EngramModel(testStore: store)
+        let memory = try await store.store(content: "To be deleted.", tags: [])
+        await model.refreshForTesting()
+        #expect(model.memories.count == 1)
+        #expect(model.stats.totalActive == 1)
+
+        try await store.delete(id: memory.id)
+        await model.refreshForTesting()
+
+        #expect(model.memories.isEmpty)
+        #expect(model.stats.totalActive == 0)
     }
 }
