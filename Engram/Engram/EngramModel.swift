@@ -90,13 +90,18 @@ final class EngramModel {
     var activityLookback: Lookback = .h1
     private(set) var activityRows: [ActivityRow] = []
 
+    /// The specific activity row the user last clicked, tracked separately from
+    /// `selectedMemory` so the Table highlight stays on the exact clicked event
+    /// rather than always snapping to the first (newest) event for that memory.
+    var selectedActivityRowID: String?
+
     /// The full prompt that retrieved the selected memory, surfaced above it in
     /// the inspector (the Activity table truncates the Query column). Only set in
     /// the Activity lens, so it self-clears when switching lenses or selecting a
-    /// memory elsewhere. Mirrors the Activity selection binding's memory→row match.
+    /// memory elsewhere.
     var selectedRetrievalQuery: String? {
-        guard section == .activity, let selected = selectedMemory else { return nil }
-        let query = activityRows.first { $0.memory?.id == selected.id }?.event.query
+        guard section == .activity, let rowID = selectedActivityRowID else { return nil }
+        let query = activityRows.first { $0.id == rowID }?.event.query
         return query?.isEmpty == true ? nil : query
     }
 

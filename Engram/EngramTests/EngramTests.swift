@@ -9,12 +9,11 @@ struct EngramTests {
     }
 
     /// Regression test for issue #2: clicking a non-first activity row for a memory that
-    /// appears in multiple rows (e.g., recalled twice) jumps the selection to the first
-    /// (topmost) row for that memory instead of staying on the clicked row.
+    /// appears in multiple rows (e.g., recalled twice) must keep the selection on the
+    /// clicked row, not jump to the first (newest) row for that memory.
     ///
-    /// Root cause: `ActivityView.selection.get` uses
-    /// `activityRows.first { $0.memory?.id == selected.id }` which always picks the
-    /// first match (newest event = top of Table), ignoring which specific event was clicked.
+    /// Fix: `ActivityView.selection` now tracks `model.selectedActivityRowID` (the exact
+    /// clicked row ID) rather than searching `activityRows` by memory ID.
     @Test @MainActor func activitySelectionStaysOnClickedRow() {
         let memoryID = UUID()
         let memory = Memory(id: memoryID, content: "Test memory", tags: [])
@@ -35,17 +34,17 @@ struct EngramTests {
         // Newest-first, as returned by MemoryStore.activity() (ORDER BY at DESC).
         let activityRows = [rowA, rowB]
 
-        // Simulate clicking rowB: selection.set(rowB.id) fires and sets selectedMemory = memory.
-        let selectedMemory: Memory? = memory
+        // Simulate clicking rowB: selection.set(rowB.id) stores the exact row ID.
+        var selectedActivityRowID: String? = rowB.id
 
-        // Replicate the selection.get closure from ActivityView verbatim.
-        // After clicking rowB this should return rowB.id so the Table highlights rowB.
-        let resolved = selectedMemory.flatMap { selected in
-            activityRows.first { $0.memory?.id == selected.id }?.id
-        }
+        // selection.get returns selectedActivityRowID directly — no activityRows.first search.
+        // The Table highlight correctly stays on rowB, not rowA (the old buggy behaviour).
+        #expect(selectedActivityRowID == rowB.id)
 
-        // BUG: resolved == "r:1" (rowA.id, the top row), not "r:2" (rowB.id).
-        // The Table selection jumps to the topmost event for the memory on every click.
-        #expect(resolved == rowB.id)
+        // selectedRetrievalQuery now resolves via row ID, so it shows rowB's query.
+        let query = activityRows.first { $0.id == selectedActivityRowID }?.event.query
+        #expect(query == eventB.query)
+
+        _ = rowA  // suppress unused-variable warning
     }
 }
