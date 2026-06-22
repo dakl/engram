@@ -16,6 +16,10 @@ enum PrivilegedInstaller {
         case failed(String)
     }
 
+    /// Watchdog ceiling so a wedged auth dialog can't hang the install sheet on
+    /// its spinner forever. Generous — the user may take a while to authenticate.
+    private static let timeout: TimeInterval = 120
+
     static func install(source: String = EngramModel.bundledEngramPath) async -> Outcome {
         await Task.detached(priority: .userInitiated) { runOSAScript(source: source) }.value
     }
@@ -37,9 +41,19 @@ enum PrivilegedInstaller {
         process.standardError = errorPipe
         do {
             try process.run()
-            process.waitUntilExit()
         } catch {
             return .failed("Couldn't run the installer: \(error.localizedDescription)")
+        }
+        // Watchdog: terminate a wedged auth dialog so waitUntilExit() can't block
+        // the sheet's spinner indefinitely.
+        let watchdog = DispatchWorkItem { if process.isRunning { process.terminate() } }
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: watchdog)
+        process.waitUntilExit()
+        watchdog.cancel()
+
+        if process.terminationReason == .uncaughtSignal {
+            return .failed(
+                "The installer timed out waiting for authorization. Try again, or install from Terminal with sudo.")
         }
         if process.terminationStatus == 0 {
             return .installed("installed engram → \(dest)")

@@ -440,8 +440,6 @@ final class EngramModel {
     /// When set, the app presents the install confirmation sheet for this action.
     var pendingInstall: InstallKind?
 
-    /// Runs the CLI shipped inside the app bundle. `nonisolated static` so the
-    /// install sheet can run it off the main actor without blocking the UI.
     /// Absolute path to the engram CLI bundled inside the app. Used both to run
     /// it and to show a runnable `sudo … install` fallback (the CLI isn't on
     /// $PATH until installed, so the bare name wouldn't resolve).
@@ -449,6 +447,8 @@ final class EngramModel {
         Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/engram").path
     }
 
+    /// Runs the CLI shipped inside the app bundle. `nonisolated static` so the
+    /// install sheet can run it off the main actor without blocking the UI.
     nonisolated static func runBundledEngram(_ arguments: [String]) -> (output: String, success: Bool) {
         // Bundled at Contents/Helpers/engram (not Contents/MacOS — "engram" would
         // collide with the app binary "Engram" on case-insensitive APFS).

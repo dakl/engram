@@ -57,8 +57,8 @@ enum InstallKind: Identifiable, Equatable {
     }
 
     /// CLI install writes to root-owned /usr/local/bin, so it goes through the
-    /// privileged helper (ADR 0022); integration install only edits files under
-    /// the user's home and shells out to the bundled CLI.
+    /// authenticated osascript install (ADR 0022); integration install only edits
+    /// files under the user's home and shells out to the bundled CLI.
     var usesPrivilegedHelper: Bool {
         switch self {
         case .cli: return true
