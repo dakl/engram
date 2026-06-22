@@ -11,7 +11,10 @@ and recall content. See `README.md` for architecture and build instructions.
 - `Sources/engram-eval` — offline retrieval eval harness (`swift run engram-eval`): seeds a temp store from `Resources/corpus.json` + `queries.json`, runs each prompt through `fetch`, applies `RecallGate` configs, and prints a current-vs-tightened comparison (ADR 0021). `--distances` dumps per-kind distance separability; `--record` appends a per-run JSON file (git sha + embedder signature + host + metrics) under `eval/runs/`. Numbers are embedder/machine-dependent — it's a relative A/B, not a benchmark.
 - `Sources/engram` — the `engram` CLI (store / fetch / stats / activity / hook)
 - `Sources/CSQLite` — vendored SQLite + sqlite-vec (static C target)
-- `Sources/engram/Setup.swift` — install logic (`engram install` / `engram setup`); the single source of truth for installing the CLI, hook, and skills
+- `Sources/engram/Setup.swift` — install logic (`engram install` / `engram setup`); the single source of truth for installing the CLI, hook, and skills. `engram install` symlinks `/usr/local/bin/engram` → the running binary
+- `Sources/EngramCore/HelperProtocol.swift` + `HelperDaemon.swift` — the privileged helper (ADR 0022): the shared XPC contract/constants and the root daemon (NSXPCListener + client code-sign validation + symlink install) the bundled CLI runs as `engram _helper-daemon`
+- `Engram/Engram/PrivilegedInstaller.swift` — app-side driver for the helper: `SMAppService` daemon registration (+ Login Items approval flow) and the XPC call that installs the CLI; backs the toolbar **Install CLI** button (ADR 0022)
+- `Engram/org.klevan.Engram.helper.plist` — the LaunchDaemon plist, copied into `Contents/Library/LaunchDaemons/` by `bundle-cli.sh`
 - `Engram/` — the Xcode SwiftUI app (thin shell over `EngramCore`); not sandboxed (ADR 0003)
 - `Engram/Engram/SettingsView.swift` — Settings window (⌘,) with the Sparkle-backed Updates pane (ADR 0010)
 - `Engram/Engram/ContentView.swift` — the native `NavigationSplitView` shell: sidebar (lenses + facet filters), detail container, one toolbar, trailing inspector (ADR 0016)
@@ -25,7 +28,7 @@ and recall content. See `README.md` for architecture and build instructions.
 - `Engram/Engram/ActivityView.swift` — the Activity lens: a unified timeline of reads (recall/search/fetch/…) **and** writes (store/update/delete) as a native sortable `Table` backed by `MemoryStore.activity()`; lookback lives in the toolbar (ADR 0015/0016/0017/0020)
 - `Sources/EngramCore/Facets.swift` — pure parser splitting tags into `key:value` facets vs freeform; folds `source` into `project` (ADR 0013)
 - `Engram/Info.plist` — partial plist merged into the generated one; carries the Sparkle `SU*` keys (custom keys can't go through `INFOPLIST_KEY_*`)
-- `Engram/scripts/bundle-cli.sh` — build phase that bundles the CLI into the app
+- `Engram/scripts/bundle-cli.sh` — build phase that bundles the CLI (and the helper LaunchDaemon plist, ADR 0022) into the app
 - `scripts/release.sh` + `scripts/bump_version.py` — local `make release-*` flow: gate, bump, tag, push (ADR 0010)
 - `scripts/update_appcast.py` — prepends a release entry to `docs/appcast.xml` (run by CI; stdlib-only so the runner needs no uv)
 - `.github/workflows/release.yml` + `.github/ExportOptions.plist` — CI that signs, notarizes, and publishes a release (ADR 0010)

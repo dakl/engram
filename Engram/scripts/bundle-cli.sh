@@ -29,3 +29,11 @@ if [ "${CODE_SIGNING_ALLOWED:-YES}" = "YES" ] && [ -n "${EXPANDED_CODE_SIGN_IDEN
 fi
 
 echo "note: bundled engram → $DEST_DIR/engram"
+
+# Bundle the privileged-helper LaunchDaemon plist (ADR 0022). SMAppService loads
+# it from Contents/Library/LaunchDaemons/; the plist itself isn't signed (the
+# enclosing app bundle is), so just copy it into place.
+DAEMON_DIR="$CODESIGNING_FOLDER_PATH/Contents/Library/LaunchDaemons"
+mkdir -p "$DAEMON_DIR"
+cp -f "$SRCROOT/org.klevan.Engram.helper.plist" "$DAEMON_DIR/org.klevan.Engram.helper.plist"
+echo "note: bundled helper daemon plist → $DAEMON_DIR/org.klevan.Engram.helper.plist"

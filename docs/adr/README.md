@@ -31,6 +31,7 @@ supersedes the old one (and update the old one's status to `Superseded by NNNN`)
 | [0019](0019-tag-centric-exploration.md) | Tag-centric exploration: Tags list + bipartite tag-graph (supersedes 0018 Map/Structure) | Accepted |
 | [0020](0020-unified-activity-timeline.md) | Unified Activity timeline: reads + writes in one stream (extends 0015) | Accepted |
 | [0021](0021-embedder-relative-recall-gate.md) | Embedder-relative recall gate, calibrated by offline eval (refines 0005's gate) | Accepted |
+| [0022](0022-privileged-helper-for-cli-install.md) | Privileged helper (SMAppService + XPC) for installing the CLI symlink | Accepted |
 
 ## Writing a new ADR
 

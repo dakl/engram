@@ -118,7 +118,7 @@ engram delete <uuid>
 engram verify [--json]               # cheap deterministic checks; one verdict per active memory
 engram verified <uuid> [--confidence 0..1] [--json]                  # mark a memory verified now
 engram supersede <old-uuid> "<new content>" --reason "<why>" [--tags a,b] [--source repo] [--json]  # replace, keeping history
-engram install                       # copy this binary to /usr/local/bin/engram
+engram install                       # symlink /usr/local/bin/engram → this binary
 engram setup [--hooks] [--skills]    # install the recall hook and/or the skills
 ```
 
@@ -212,11 +212,16 @@ CLI** (→ `/usr/local/bin/engram`) and **Install Hooks & Skills** — or from t
 terminal:
 
 ```bash
-engram install   # copy the CLI to /usr/local/bin
+engram install   # symlink the CLI into /usr/local/bin
 engram setup     # write the recall (UserPromptSubmit) + verify-context (SessionStart) hooks and the /remember skill
 ```
 
-Both are idempotent and back up `~/.claude/settings.json` before editing it.
+`/usr/local/bin` is root-owned on Apple Silicon and on fresh macOS, so the app's
+**Install CLI** button writes the symlink through a privileged helper
+(`SMAppService` + XPC; ADR 0022) — macOS asks you to enable Engram in System
+Settings → Login Items the first time. If you decline, `sudo engram install`
+from the terminal does the same thing. Both are idempotent; `engram setup` backs
+up `~/.claude/settings.json` before editing it.
 
 ## Embedding quality
 

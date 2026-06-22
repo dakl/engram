@@ -24,7 +24,8 @@ let package = Package(
             name: "EngramCore",
             dependencies: ["CSQLite"],
             linkerSettings: [
-                .linkedFramework("NaturalLanguage")
+                .linkedFramework("NaturalLanguage"),
+                .linkedFramework("Security"),
             ]
         ),
         .executableTarget(

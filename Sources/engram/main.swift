@@ -157,6 +157,11 @@ switch command {
 case "install":
     do { print(try Setup.installCLI()) } catch { fail("\(error)") }
     exit(0)
+case "_helper-daemon":
+    // Hidden: the privileged helper entry point (ADR 0022). Launched as root by
+    // SMAppService via the bundled LaunchDaemon plist, not run by users. Blocks
+    // forever servicing XPC connections.
+    HelperDaemon().run()
 case "setup":
     // Default installs both; --hooks / --skills narrow it.
     let onlyHooks = flags.contains("--hooks")

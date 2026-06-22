@@ -1,3 +1,4 @@
+import ServiceManagement
 import SwiftUI
 
 /// The two install actions the app can perform, with the copy + CLI arguments
@@ -32,7 +33,7 @@ enum InstallKind: Identifiable, Equatable {
     var summary: String {
         switch self {
         case .cli:
-            return "Copies the bundled engram command-line tool to your PATH."
+            return "Symlinks the bundled engram command-line tool into your PATH."
         case .integration:
             return "Sets up Engram's Claude Code integration."
         }
@@ -42,9 +43,9 @@ enum InstallKind: Identifiable, Equatable {
         switch self {
         case .cli:
             return [
-                "Installs to /usr/local/bin/engram",
+                "Symlinks /usr/local/bin/engram to the bundled CLI",
                 "Lets Claude Code and your terminal run engram",
-                "Replaces any existing engram there",
+                "May ask you to approve Engram in System Settings the first time",
             ]
         case .integration:
             return [
@@ -53,6 +54,16 @@ enum InstallKind: Identifiable, Equatable {
                 "Idempotent — safe to run again",
                 "Tip: install the CLI first so the hook can find engram",
             ]
+        }
+    }
+
+    /// CLI install writes to root-owned /usr/local/bin, so it goes through the
+    /// privileged helper (ADR 0022); integration install only edits files under
+    /// the user's home and shells out to the bundled CLI.
+    var usesPrivilegedHelper: Bool {
+        switch self {
+        case .cli: return true
+        case .integration: return false
         }
     }
 
@@ -74,6 +85,9 @@ struct InstallSheet: View {
     enum Phase: Equatable {
         case confirm
         case running
+        /// The privileged helper needs the user to enable Engram in System
+        /// Settings → Login Items before it can install (ADR 0022).
+        case needsApproval
         case done(output: String, success: Bool)
     }
 
@@ -126,6 +140,19 @@ struct InstallSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.vertical, 8)
+        case .needsApproval:
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Approval needed", systemImage: "lock.shield")
+                    .font(.headline)
+                    .foregroundStyle(kind.tint)
+                Text("""
+                macOS needs your OK to let Engram install the command-line tool. \
+                I've opened System Settings → Login Items — switch Engram on there, \
+                then click Install again.
+                """)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            }
         case let .done(output, success):
             VStack(alignment: .leading, spacing: 12) {
                 Label(success ? "Done" : "Something went wrong",
@@ -158,6 +185,14 @@ struct InstallSheet: View {
                     .tint(kind.tint)
             case .running:
                 Button("Install") {}.disabled(true).buttonStyle(.borderedProminent)
+            case .needsApproval:
+                Button("Cancel") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("Open Login Items") { SMAppService.openSystemSettingsLoginItems() }
+                Button("Install") { run() }
+                    .keyboardShortcut(.defaultAction)
+                    .buttonStyle(.borderedProminent)
+                    .tint(kind.tint)
             case .done:
                 Button("Done") { dismiss() }
                     .keyboardShortcut(.defaultAction)
@@ -170,11 +205,23 @@ struct InstallSheet: View {
     private func run() {
         phase = .running
         Task {
-            let result = await Task.detached(priority: .userInitiated) {
-                EngramModel.runBundledEngram(kind.arguments)
-            }.value
-            phase = .done(output: result.output, success: result.success)
-            if kind == .cli && result.success { model.refresh() }
+            if kind.usesPrivilegedHelper {
+                switch await PrivilegedInstaller.install() {
+                case let .installed(message):
+                    phase = .done(output: message, success: true)
+                    model.refresh()
+                case .needsApproval:
+                    phase = .needsApproval
+                case let .failed(message):
+                    phase = .done(output: message + "\n\nOr install it from Terminal:\n    sudo "
+                        + EngramModel.bundledEngramPath + " install", success: false)
+                }
+            } else {
+                let result = await Task.detached(priority: .userInitiated) {
+                    EngramModel.runBundledEngram(kind.arguments)
+                }.value
+                phase = .done(output: result.output, success: result.success)
+            }
         }
     }
 }
