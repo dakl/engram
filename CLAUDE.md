@@ -12,7 +12,7 @@ and recall content. See `README.md` for architecture and build instructions.
 - `Sources/engram` — the `engram` CLI (store / fetch / stats / activity / hook)
 - `Sources/CSQLite` — vendored SQLite + sqlite-vec (static C target)
 - `Sources/engram/Setup.swift` — install logic (`engram install` / `engram setup`); the single source of truth for installing the CLI, hook, and skills. `engram install` symlinks `/usr/local/bin/engram` → the running binary
-- `Engram/Engram/PrivilegedInstaller.swift` — app-side privileged install (ADR 0022): runs the symlink through the Apple-signed `/usr/bin/osascript` (`do shell script … with administrator privileges`) for one Touch-ID/password dialog, no persistent helper; backs the toolbar **Install CLI** button
+- `Engram/Engram/PrivilegedInstaller.swift` — app-side privileged install (ADR 0022): runs the symlink through the Apple-signed `/usr/bin/osascript` (`do shell script … with administrator privileges`) for one password dialog, no persistent helper; backs the toolbar **Install CLI** button
 - `Engram/` — the Xcode SwiftUI app (thin shell over `EngramCore`); not sandboxed (ADR 0003)
 - `Engram/Engram/SettingsView.swift` — Settings window (⌘,) with the Sparkle-backed Updates pane (ADR 0010)
 - `Engram/Engram/ContentView.swift` — the native `NavigationSplitView` shell: sidebar (lenses + facet filters), detail container, one toolbar, trailing inspector (ADR 0016)

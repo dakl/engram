@@ -218,10 +218,10 @@ engram setup     # write the recall (UserPromptSubmit) + verify-context (Session
 
 `/usr/local/bin` is root-owned on Apple Silicon and on fresh macOS, so the app's
 **Install CLI** button writes the symlink with one authenticated prompt — a
-single Touch-ID/password dialog via `osascript … with administrator privileges`,
-leaving no daemon or login item behind (ADR 0022). If you decline, `sudo engram
-install` from the terminal does the same thing. Both are idempotent; `engram
-setup` backs up `~/.claude/settings.json` before editing it.
+single password dialog via `osascript … with administrator privileges`, leaving
+no daemon or login item behind (ADR 0022). If you decline, `sudo engram install`
+from the terminal does the same thing. Both are idempotent; `engram setup` backs
+up `~/.claude/settings.json` before editing it.
 
 ## Embedding quality
 

@@ -44,7 +44,7 @@ enum InstallKind: Identifiable, Equatable {
             return [
                 "Symlinks /usr/local/bin/engram to the bundled CLI",
                 "Lets Claude Code and your terminal run engram",
-                "Asks for your password (or Touch ID) to write there",
+                "Asks for your password to write there",
             ]
         case .integration:
             return [

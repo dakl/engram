@@ -29,12 +29,15 @@ non-deprecated, leftover-free, Touch-ID-capable one-shot API — you pick two of
 | `SMAppService.daemon` + XPC | Login Items toggle in System Settings | no | a registered root daemon, forever |
 | `SMJobBless` + Authorization Services | native auth dialog | yes | a privileged helper tool |
 | `AuthorizationExecuteWithPrivileges` | native auth dialog | yes | nothing — but deprecated/removed |
-| `osascript … do shell script … with administrator privileges` | native auth dialog | **yes¹** | nothing |
+| `osascript … do shell script … with administrator privileges` | password prompt | **no¹** | nothing |
 
-¹ The SecurityAgent authorization plug-in only offers Touch ID when the process
-*requesting* authorization is **Apple-signed**. Running the Apple-signed
-`/usr/bin/osascript` binary satisfies that; calling NSAppleScript in-process from
-our (Developer-ID-signed) app would not, and would fall back to a password.
+¹ We initially expected Touch ID here (the requesting process, `/usr/bin/osascript`,
+is Apple-signed), but on-device testing showed `do shell script … with
+administrator privileges` always presents a **password** prompt — it doesn't
+route through the biometric-enabled authorization path. Touch ID for a privileged
+file op in practice requires a helper (the Authorization Services / `SMJobBless`
+route), which we deliberately don't take. The password prompt also names the
+requester ("osascript wants to make changes"), which isn't customizable.
 
 An `SMAppService` LaunchDaemon — initially prototyped here — is the wrong shape
 for a one-shot symlink: it registers a *persistent* root daemon and forces the
@@ -53,11 +56,10 @@ Apple-signed `osascript`:
 ```
 
 - The app (`PrivilegedInstaller`) spawns `/usr/bin/osascript` as a subprocess.
-  Because the requester is Apple-signed, macOS shows the standard authentication
-  dialog **with Touch ID** when the user has it enabled, otherwise a password
-  field. Cancelling (`osascript` exit, error `-128`) returns the sheet to its
-  confirm state; other non-zero exits surface the error plus the
-  `sudo … install` terminal fallback.
+  macOS shows the standard admin authentication dialog (a password prompt — not
+  Touch ID; see the table note). Cancelling (`osascript` exit, error `-128`)
+  returns the sheet to its confirm state; other non-zero exits surface the error
+  plus the `sudo … install` terminal fallback.
 - `<src>` is the bundled CLI at `Contents/Helpers/engram`; both paths are
   app-derived (never user input) and still shell-quoted + AppleScript-escaped so
   an unusual install location can't break or inject into the command.
@@ -67,9 +69,10 @@ Apple-signed `osascript`:
 
 ## Consequences
 
-- One authenticated dialog, Touch ID when available, and the machine is left
-  exactly as before save for the symlink — matching a dev tool's "install once"
-  mental model.
+- One authenticated dialog (a password prompt) and the machine is left exactly
+  as before save for the symlink — matching a dev tool's "install once" mental
+  model. No Touch ID (see the survey table); accepted as a fair trade for zero
+  persistence.
 - The symlink keeps the CLI tracking the current app version across Sparkle
   updates (the short-term symlink change, now performed with privilege).
 - **Costs of the `osascript` route (accepted):** the auth dialog's wording isn't
@@ -77,9 +80,10 @@ Apple-signed `osascript`:
   explains what's about to happen first; and it's a fork/exec of a system binary
   rather than a typed Swift API. Each invocation re-authenticates — fine for a
   once-ever install.
-- We forgo Touch-ID-free silent re-runs. If Engram ever needs *repeated* silent
+- We forgo silent (no-prompt) re-runs. If Engram ever needs *repeated* silent
   privileged operations (e.g. an uninstaller, or re-linking on every app move), a
   persistent helper (`SMAppService`/`SMJobBless`) would become justified and
-  warrant a new ADR; for now it's unjustified complexity.
+  warrant a new ADR; for now it's unjustified complexity. (A helper would also be
+  the only way to get the Touch ID dialog, if that ever becomes a priority.)
 - Verifiable locally: this is just a subprocess, so the flow runs on any signed
   dev build — no notarization or daemon registration required to exercise it.

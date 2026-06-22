@@ -2,13 +2,12 @@ import Foundation
 
 /// Installs the `/usr/local/bin/engram` symlink with one authenticated prompt
 /// (ADR 0022). `/usr/local/bin` is root-owned on Apple Silicon and fresh macOS,
-/// so the write needs privilege — we get it by running the symlink through the
-/// **Apple-signed `/usr/bin/osascript`** binary's `do shell script … with
-/// administrator privileges`. Because the *requesting* process is Apple-signed,
-/// the system auth dialog offers Touch ID (when enabled); a non-Apple-signed
-/// requester — e.g. calling NSAppleScript in-process from this app — would fall
-/// back to a password prompt. No persistent helper, no Login Items, nothing left
-/// registered afterward.
+/// so the write needs privilege — we get it by running the symlink through
+/// `/usr/bin/osascript`'s `do shell script … with administrator privileges`,
+/// which shows the standard admin **password** dialog. (It does not offer Touch
+/// ID — `do shell script` doesn't route through the biometric authorization
+/// path, confirmed on-device; Touch ID would require a privileged helper, ADR
+/// 0022.) No persistent helper, no Login Items, nothing left registered after.
 enum PrivilegedInstaller {
     enum Outcome {
         case installed(String)
