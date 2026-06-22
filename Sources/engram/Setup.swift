@@ -21,7 +21,7 @@ enum Setup {
 
     // MARK: - engram install
 
-    /// Copies the running binary to `/usr/local/bin/engram`.
+    /// Symlinks `/usr/local/bin/engram` to the running binary.
     static func installCLI() throws -> String {
         guard let source = Bundle.main.executablePath else {
             throw SetupError("could not locate the running engram binary")
@@ -32,10 +32,41 @@ enum Setup {
         }
         let fm = FileManager.default
         try fm.createDirectory(atPath: installPrefix, withIntermediateDirectories: true)
-        if fm.fileExists(atPath: dest) { try fm.removeItem(atPath: dest) }
-        try fm.copyItem(atPath: source, toPath: dest)
-        try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: dest)
+        // Remove any existing file or symlink at the destination first.
+        if fm.fileExists(atPath: dest) || isSymlink(atPath: dest) {
+            try fm.removeItem(atPath: dest)
+        }
+        do {
+            try fm.createSymbolicLink(atPath: dest, withDestinationPath: source)
+        } catch {
+            if isPermissionDenied(error) {
+                throw SetupError(
+                    "Permission denied writing to \(installPrefix). Run this in Terminal instead:\n\n    sudo engram install")
+            }
+            throw error
+        }
         return "installed engram → \(dest)"
+    }
+
+    /// `fileExists` follows symlinks, so a dangling symlink reports false; check
+    /// the symbolic link attribute directly to catch that case too.
+    private static func isSymlink(atPath path: String) -> Bool {
+        (try? FileManager.default.attributesOfItem(atPath: path)[.type] as? FileAttributeType) == .typeSymbolicLink
+    }
+
+    private static func isPermissionDenied(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain && nsError.code == 513 {
+            return true
+        }
+        if let posix = error as? POSIXError, posix.code == .EACCES || posix.code == .EPERM {
+            return true
+        }
+        if nsError.domain == NSPOSIXErrorDomain
+            && (nsError.code == Int(EACCES) || nsError.code == Int(EPERM)) {
+            return true
+        }
+        return false
     }
 
     // MARK: - engram setup
