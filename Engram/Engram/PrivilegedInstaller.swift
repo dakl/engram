@@ -1,117 +1,71 @@
-import EngramCore
 import Foundation
-import ServiceManagement
 
-/// Drives the privileged helper (ADR 0022): registers the bundled LaunchDaemon
-/// with `SMAppService`, then calls it over XPC to create the
-/// `/usr/local/bin/engram` symlink as root. Replaces the user-writable-only
-/// `engram install` path for the app's "Install CLI" button.
+/// Installs the `/usr/local/bin/engram` symlink with one authenticated prompt
+/// (ADR 0022). `/usr/local/bin` is root-owned on Apple Silicon and fresh macOS,
+/// so the write needs privilege — we get it by running the symlink through the
+/// **Apple-signed `/usr/bin/osascript`** binary's `do shell script … with
+/// administrator privileges`. Because the *requesting* process is Apple-signed,
+/// the system auth dialog offers Touch ID (when enabled); a non-Apple-signed
+/// requester — e.g. calling NSAppleScript in-process from this app — would fall
+/// back to a password prompt. No persistent helper, no Login Items, nothing left
+/// registered afterward.
 enum PrivilegedInstaller {
     enum Outcome {
         case installed(String)
-        /// The daemon needs the user to enable Engram in System Settings → Login
-        /// Items before it can run. System Settings has been opened.
-        case needsApproval
+        /// The user dismissed the authentication dialog.
+        case cancelled
         case failed(String)
     }
 
-    private static var service: SMAppService {
-        SMAppService.daemon(plistName: HelperConstants.daemonPlistName)
+    static func install(source: String = EngramModel.bundledEngramPath) async -> Outcome {
+        await Task.detached(priority: .userInitiated) { runOSAScript(source: source) }.value
     }
 
-    /// Registers + (if needed) prompts approval for the daemon, then asks it to
-    /// install the symlink.
-    static func install() async -> Outcome {
-        switch ensureRegistered() {
-        case .ready:
-            break
-        case .needsApproval:
-            return .needsApproval
-        case let .failed(message):
-            return .failed(message)
+    private static func runOSAScript(source: String) -> Outcome {
+        let dest = "/usr/local/bin/engram"
+        // -sfn: replace any existing file/symlink atomically; -n so an existing
+        // symlink-to-dir is treated as a file, not followed into.
+        let shellCommand = "/bin/mkdir -p /usr/local/bin && /bin/ln -sfn "
+            + shellQuoted(source) + " " + shellQuoted(dest)
+        let appleScript = "do shell script \"" + appleScriptEscaped(shellCommand)
+            + "\" with administrator privileges"
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", appleScript]
+        let errorPipe = Pipe()
+        process.standardOutput = Pipe()
+        process.standardError = errorPipe
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return .failed("Couldn't run the installer: \(error.localizedDescription)")
         }
-        return await callHelper()
-    }
-
-    private enum Registration {
-        case ready
-        case needsApproval
-        case failed(String)
-    }
-
-    private static func ensureRegistered() -> Registration {
-        let service = self.service
-        switch service.status {
-        case .enabled:
-            return .ready
-        case .requiresApproval:
-            SMAppService.openSystemSettingsLoginItems()
-            return .needsApproval
-        case .notRegistered, .notFound:
-            do {
-                try service.register()
-            } catch {
-                if service.status == .requiresApproval {
-                    SMAppService.openSystemSettingsLoginItems()
-                    return .needsApproval
-                }
-                return .failed("Couldn't register the privileged helper: \(error.localizedDescription)")
-            }
-            // Registration on a fresh machine lands in requiresApproval until the
-            // user toggles Engram on in Login Items.
-            if service.status == .requiresApproval {
-                SMAppService.openSystemSettingsLoginItems()
-                return .needsApproval
-            }
-            return service.status == .enabled
-                ? .ready
-                : .failed("Helper didn't enable (status \(service.status.rawValue)).")
-        @unknown default:
-            return .failed("Unexpected helper status (\(service.status.rawValue)).")
+        if process.terminationStatus == 0 {
+            return .installed("installed engram → \(dest)")
         }
-    }
-
-    private static func callHelper() async -> Outcome {
-        await withCheckedContinuation { continuation in
-            let connection = NSXPCConnection(machServiceName: HelperConstants.machServiceName,
-                                             options: .privileged)
-            connection.remoteObjectInterface = NSXPCInterface(with: EngramHelperProtocol.self)
-            connection.resume()
-
-            // The error handler and the reply both run on XPC's queue and are
-            // mutually exclusive in practice, but guard against a double resume.
-            let once = Once()
-            let finish: (Outcome) -> Void = { outcome in
-                once.run {
-                    connection.invalidate()
-                    continuation.resume(returning: outcome)
-                }
-            }
-
-            let proxy = connection.remoteObjectProxyWithErrorHandler { error in
-                finish(.failed("Couldn't reach the helper: \(error.localizedDescription)"))
-            }
-            guard let helper = proxy as? EngramHelperProtocol else {
-                finish(.failed("Couldn't create the helper proxy."))
-                return
-            }
-            helper.installCLI { success, message in
-                finish(success ? .installed(message) : .failed(message))
-            }
+        let message = String(
+            data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8
+        )?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // osascript reports a user-cancelled auth dialog as error -128.
+        if message.contains("-128") || message.localizedCaseInsensitiveContains("cancel") {
+            return .cancelled
         }
+        return .failed(message.isEmpty ? "Install failed." : message)
     }
-}
 
-/// One-shot guard so a continuation is resumed exactly once across the XPC
-/// reply and error-handler callbacks.
-private final class Once: @unchecked Sendable {
-    private var done = false
-    private let lock = NSLock()
-    func run(_ block: () -> Void) {
-        lock.lock()
-        defer { lock.unlock() }
-        guard !done else { return }
-        done = true
-        block()
+    /// Single-quotes a string for /bin/sh, escaping embedded single quotes. Both
+    /// paths here are app-derived, not user text, but quote anyway so an unusual
+    /// install location can't break (or inject into) the command.
+    private static func shellQuoted(_ string: String) -> String {
+        "'" + string.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    /// Escapes a string to sit inside an AppleScript double-quoted literal.
+    private static func appleScriptEscaped(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
     }
 }
