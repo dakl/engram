@@ -32,7 +32,7 @@ enum InstallKind: Identifiable, Equatable {
     var summary: String {
         switch self {
         case .cli:
-            return "Copies the bundled engram command-line tool to your PATH."
+            return "Symlinks the bundled engram command-line tool into your PATH."
         case .integration:
             return "Sets up Engram's Claude Code integration."
         }
@@ -42,9 +42,9 @@ enum InstallKind: Identifiable, Equatable {
         switch self {
         case .cli:
             return [
-                "Installs to /usr/local/bin/engram",
+                "Symlinks /usr/local/bin/engram to the bundled CLI",
                 "Lets Claude Code and your terminal run engram",
-                "Replaces any existing engram there",
+                "Asks for your password to write there",
             ]
         case .integration:
             return [
@@ -53,6 +53,16 @@ enum InstallKind: Identifiable, Equatable {
                 "Idempotent — safe to run again",
                 "Tip: install the CLI first so the hook can find engram",
             ]
+        }
+    }
+
+    /// CLI install writes to root-owned /usr/local/bin, so it goes through the
+    /// authenticated osascript install (ADR 0022); integration install only edits
+    /// files under the user's home and shells out to the bundled CLI.
+    var usesPrivilegedHelper: Bool {
+        switch self {
+        case .cli: return true
+        case .integration: return false
         }
     }
 
@@ -170,11 +180,23 @@ struct InstallSheet: View {
     private func run() {
         phase = .running
         Task {
-            let result = await Task.detached(priority: .userInitiated) {
-                EngramModel.runBundledEngram(kind.arguments)
-            }.value
-            phase = .done(output: result.output, success: result.success)
-            if kind == .cli && result.success { model.refresh() }
+            if kind.usesPrivilegedHelper {
+                switch await PrivilegedInstaller.install() {
+                case let .installed(message):
+                    phase = .done(output: message, success: true)
+                    model.refresh()
+                case .cancelled:
+                    phase = .confirm
+                case let .failed(message):
+                    phase = .done(output: message + "\n\nOr install it from Terminal:\n    sudo "
+                        + EngramModel.bundledEngramPath + " install", success: false)
+                }
+            } else {
+                let result = await Task.detached(priority: .userInitiated) {
+                    EngramModel.runBundledEngram(kind.arguments)
+                }.value
+                phase = .done(output: result.output, success: result.success)
+            }
         }
     }
 }
