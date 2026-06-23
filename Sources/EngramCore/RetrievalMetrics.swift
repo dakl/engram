@@ -121,3 +121,62 @@ public enum RetrievalMetrics {
         values.isEmpty ? 0 : values.reduce(0, +) / Double(values.count)
     }
 }
+
+/// Session-aware injection metric (ADR 0023). The per-query metrics above can't
+/// see *repetition across a session* — the same memory re-injected on prompt
+/// after prompt. This summarizes that over ordered prompt sequences.
+public struct SessionInjectionReport: Sendable, Codable {
+    public let sessionCount: Int
+    public let promptCount: Int
+    /// Total memories injected across every prompt of every session.
+    public let totalInjections: Int
+    /// Injections of a memory *beyond the first* within the same session — pure
+    /// repetition. The number the session cooldown is meant to drive toward zero.
+    public let redundantInjections: Int
+    /// `redundantInjections / totalInjections` — 0 means every injection was a
+    /// memory's first appearance in its session.
+    public let redundantRate: Double
+    public let meanInjectionsPerSession: Double
+}
+
+extension RetrievalMetrics {
+    /// Evaluate session injection behavior. Input: for each session, the ordered
+    /// per-prompt lists of injected memory ids. "Redundant" counts any id seen
+    /// earlier in the *same* session.
+    public static func evaluateSessions(_ sessions: [[[UUID]]]) -> SessionInjectionReport {
+        var total = 0
+        var redundant = 0
+        var promptCount = 0
+        for session in sessions {
+            var seen = Set<UUID>()
+            for prompt in session {
+                promptCount += 1
+                for id in prompt {
+                    total += 1
+                    if !seen.insert(id).inserted { redundant += 1 }
+                }
+            }
+        }
+        return SessionInjectionReport(
+            sessionCount: sessions.count,
+            promptCount: promptCount,
+            totalInjections: total,
+            redundantInjections: redundant,
+            redundantRate: total == 0 ? 0 : Double(redundant) / Double(total),
+            meanInjectionsPerSession: sessions.isEmpty ? 0 : Double(total) / Double(sessions.count)
+        )
+    }
+
+    /// Fraction of memories that, injected at least once *without* the cooldown,
+    /// are still injected at least once *with* it — across the same sessions.
+    /// Must stay 1.0: the cooldown removes repeats, never a memory's only/first hit.
+    public static func firstTouchCoverage(withoutCooldown: [[[UUID]]], withCooldown: [[[UUID]]]) -> Double {
+        let distinct: ([[[UUID]]]) -> Set<UUID> = { sessions in
+            Set(sessions.flatMap { $0.flatMap { $0 } })
+        }
+        let base = distinct(withoutCooldown)
+        guard !base.isEmpty else { return 1 }
+        let kept = distinct(withCooldown).intersection(base)
+        return Double(kept.count) / Double(base.count)
+    }
+}

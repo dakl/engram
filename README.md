@@ -139,7 +139,10 @@ per embedder — its distance thresholds are tuned to the live model's scale via
 the offline eval (`swift run engram-eval`), ADR 0021.
 Off-topic prompts inject nothing — it exits 0 silently, so it can't block or
 spam. (It does record a *retrieval-activity* row — see below — which is
-decoupled from ranking, ADR 0015.)
+decoupled from ranking, ADR 0015.) A **session-scoped cooldown** (ADR 0023) then
+drops any memory already injected via recall earlier in the same session (within
+30 min), so the same note doesn't re-appear on every on-topic prompt — keyed off
+the `session_id` now carried on each retrieval row.
 
 The same hook also appends a **reflection nudge** every 5th prompt of a session
 (tracked by a tiny per-session counter sidecar'd next to the store): a soft

@@ -21,8 +21,14 @@ struct EvalQuery: Decodable {
     let kind: String  // "targeted" | "multi" | "negative"
 }
 
+struct EvalSession: Decodable {
+    let name: String
+    let prompts: [String]
+}
+
 struct Corpus: Decodable { let memories: [CorpusMemory] }
 struct QuerySet: Decodable { let queries: [EvalQuery] }
+struct SessionSet: Decodable { let sessions: [EvalSession] }
 
 func loadResource<T: Decodable>(_ name: String, as type: T.Type) -> T {
     guard let url = Bundle.module.url(forResource: name, withExtension: "json") else {
@@ -93,6 +99,18 @@ func run() async throws {
 
     printTable(outcomesByConfig)
 
+    // Session-aware injection (ADR 0023): replay ordered, on-topic prompt
+    // sequences and measure how often the *same* memory is re-injected within a
+    // session — with vs without the session cooldown the recall hook applies.
+    let sessionSet = loadResource("sessions", as: SessionSet.self)
+    let (noCooldown, withCooldown) = try await simulateSessions(store: store, sessions: sessionSet.sessions)
+    let sessionRecord = SessionRunRecord(
+        withoutCooldown: RetrievalMetrics.evaluateSessions(noCooldown),
+        withCooldown: RetrievalMetrics.evaluateSessions(withCooldown),
+        firstTouchCoverage: RetrievalMetrics.firstTouchCoverage(withoutCooldown: noCooldown, withCooldown: withCooldown)
+    )
+    printSessionTable(sessionRecord)
+
     if CommandLine.arguments.contains("--distances") {
         try await dumpDistances(store: store, querySet: querySet)
     }
@@ -100,6 +118,7 @@ func run() async throws {
     if CommandLine.arguments.contains("--record") {
         try recordRun(
             outcomesByConfig: outcomesByConfig,
+            sessions: sessionRecord,
             embedderSignature: await store.embedderSignature,
             corpusSize: corpus.memories.count,
             queryCount: querySet.queries.count
@@ -107,11 +126,49 @@ func run() async throws {
     }
 }
 
+/// Replays each session's prompts in order through `fetch` + the shipped gate
+/// (`.current`), producing the per-prompt injected-id lists twice: once stateless
+/// ("without cooldown" — the old behavior) and once applying the real
+/// session-scoped cooldown (`recentlyInjectedInSession` + `recordRetrieval`,
+/// ADR 0023) against a unique session id, exactly as the recall hook does.
+func simulateSessions(store: MemoryStore, sessions: [EvalSession]) async throws
+    -> (withoutCooldown: [[[UUID]]], withCooldown: [[[UUID]]]) {
+    var without: [[[UUID]]] = []
+    var withCd: [[[UUID]]] = []
+    for session in sessions {
+        var statelessLists: [[UUID]] = []
+        var cooldownLists: [[UUID]] = []
+        let sessionID = "eval-\(session.name)"
+        for prompt in session.prompts {
+            let results = (try? await store.fetch(query: prompt, limit: 8, recordAccess: false)) ?? []
+            let confident = RecallGate.select(results, query: prompt, config: .current).map(\.memory.id)
+            statelessLists.append(confident)
+
+            let suppressed = (try? await store.recentlyInjectedInSession(
+                confident, sessionID: sessionID, within: MemoryStore.recallReinjectionCooldown)) ?? []
+            let fresh = confident.filter { !suppressed.contains($0) }
+            if !fresh.isEmpty {
+                try? await store.recordRetrieval(memoryIDs: fresh, source: .recall, query: prompt, sessionID: sessionID)
+            }
+            cooldownLists.append(fresh)
+        }
+        without.append(statelessLists)
+        withCd.append(cooldownLists)
+    }
+    return (without, withCd)
+}
+
 // MARK: - Per-run recording (eval/runs/<timestamp>.json)
 
 struct VariantResult: Encodable {
     let variant: String
     let report: RetrievalReport
+}
+
+struct SessionRunRecord: Encodable {
+    let withoutCooldown: SessionInjectionReport
+    let withCooldown: SessionInjectionReport
+    let firstTouchCoverage: Double
 }
 
 struct RunRecord: Encodable {
@@ -123,6 +180,7 @@ struct RunRecord: Encodable {
     let queryCount: Int
     let k: Int
     let results: [VariantResult]
+    let sessions: SessionRunRecord
 }
 
 /// Writes one JSON file per run under eval/runs/. The metadata (git sha, embedder
@@ -130,6 +188,7 @@ struct RunRecord: Encodable {
 /// alone are meaningless without the embedder/scale they were measured on.
 func recordRun(
     outcomesByConfig: [String: [QueryOutcome]],
+    sessions: SessionRunRecord,
     embedderSignature: String,
     corpusSize: Int,
     queryCount: Int
@@ -149,7 +208,8 @@ func recordRun(
         corpusSize: corpusSize,
         queryCount: queryCount,
         k: 3,
-        results: results
+        results: results,
+        sessions: sessions
     )
 
     let runsDir = URL(fileURLWithPath: "eval/runs", isDirectory: true)
@@ -208,6 +268,35 @@ func dumpDistances(store: MemoryStore, querySet: QuerySet) async throws {
 
 func pad(_ s: String, _ width: Int) -> String {
     s.count >= width ? s : s + String(repeating: " ", count: width - s.count)
+}
+
+/// Session-aware injection report (ADR 0023): the same memory re-injected across
+/// an on-topic session, before vs after the cooldown.
+func printSessionTable(_ record: SessionRunRecord) {
+    let before = record.withoutCooldown
+    let after = record.withCooldown
+    print("\n── session-aware injection (ADR 0023): \(before.sessionCount) sessions · \(before.promptCount) prompts ──")
+    let cols = ["variant", "injections", "redundant", "redund-rate"]
+    let widths = [18, 11, 10, 11]
+    print(zip(cols, widths).map { pad($0, $1) }.joined(separator: " "))
+    let rows = [("no-cooldown", before), ("session-cooldown", after)]
+    for (name, r) in rows {
+        let cells = [
+            pad(name, widths[0]),
+            pad("\(r.totalInjections)", widths[1]),
+            pad("\(r.redundantInjections)", widths[2]),
+            pad(String(format: "%.0f%%", r.redundantRate * 100), widths[3]),
+        ]
+        print(cells.joined(separator: " "))
+    }
+    print(String(format: "first-touch coverage: %.0f%%  (memories still surfaced ≥1× — must be 100%%)",
+                 record.firstTouchCoverage * 100))
+    print("""
+
+    redundant     injections of a memory beyond its first in the same session (repetition)
+    redund-rate   redundant ÷ total injections — the session cooldown should drive this to ~0
+    coverage      memories injected without the cooldown that still appear with it (over-suppression guard)
+    """)
 }
 
 func printTable(_ outcomesByConfig: [String: [QueryOutcome]]) {
