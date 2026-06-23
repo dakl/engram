@@ -32,6 +32,7 @@ supersedes the old one (and update the old one's status to `Superseded by NNNN`)
 | [0020](0020-unified-activity-timeline.md) | Unified Activity timeline: reads + writes in one stream (extends 0015) | Accepted |
 | [0021](0021-embedder-relative-recall-gate.md) | Embedder-relative recall gate, calibrated by offline eval (refines 0005's gate) | Accepted |
 | [0022](0022-privileged-helper-for-cli-install.md) | Privileged CLI install via a one-shot authenticated `osascript` | Accepted |
+| [0023](0023-session-scoped-recall-cooldown.md) | Session-scoped recall re-injection cooldown (stop re-injecting the same memory every prompt) | Accepted |
 
 ## Writing a new ADR
 

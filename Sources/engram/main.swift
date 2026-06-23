@@ -450,12 +450,23 @@ do {
             let gateConfig = RecallGate.config(forEmbedderSignature: await store.embedderSignature)
             let confident = RecallGate.select(results, query: prompt, config: gateConfig)
 
+            // Session-scoped cooldown (ADR 0023): a memory already injected via
+            // recall earlier in this session is dropped, so the same note doesn't
+            // re-appear on every on-topic prompt. No session id → nothing suppressed.
+            let sessionID = payload["session_id"] as? String ?? ""
+            let suppressed = (try? await store.recentlyInjectedInSession(
+                confident.map(\.memory.id), sessionID: sessionID,
+                within: MemoryStore.recallReinjectionCooldown)) ?? []
+            let fresh = confident.filter { !suppressed.contains($0.memory.id) }
+
             // Two independent sections: recalled notes (when confident) and a
             // periodic reflection nudge (every Nth prompt). Either may be empty.
             var sections: [String] = []
-            if !confident.isEmpty {
-                try? await store.recordRetrieval(memoryIDs: confident.map(\.memory.id), source: .recall, query: prompt)
-                let bullets = confident.map { "- \($0.memory.content)" }.joined(separator: "\n")
+            if !fresh.isEmpty {
+                try? await store.recordRetrieval(
+                    memoryIDs: fresh.map(\.memory.id), source: .recall, query: prompt,
+                    sessionID: sessionID.isEmpty ? nil : sessionID)
+                let bullets = fresh.map { "- \($0.memory.content)" }.joined(separator: "\n")
                 sections.append(untrustedMemoryBlock(
                     lead: "Possibly relevant notes from Engram (ignore if off-topic):",
                     body: bullets

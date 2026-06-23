@@ -54,13 +54,19 @@ public struct RecallGateConfig: Sendable, Equatable {
     /// kill the single-keyword leak. The per-query relevance floor and median gate
     /// were dropped — measurement showed neither separates on- from off-topic.
     ///
-    /// ⚠️ `maxDistance` is embedder-specific. 0.10 fits the contextual model; the
-    /// fallback `word-512` embedder lives on a different scale. Before shipping to
-    /// the hook this should become embedder-relative rather than a constant.
+    /// Retuned 0.10 → **0.09** (ADR 0021 addendum): on the eval that drops the
+    /// negative false-positive rate 13% → 0% with *unchanged* gate recall (the
+    /// lexical leg holds recall; the distance leg only sheds off-topic injections).
+    /// Engram's recall is precision-first — it runs on every prompt, so a false
+    /// positive bloats context repeatedly while a miss is recoverable (it re-fires
+    /// next prompt, or `/recall`). Tightening past 0.09 finally costs gate recall.
+    ///
+    /// ⚠️ `maxDistance` is embedder-specific. 0.09 fits the contextual model; the
+    /// fallback `word-512` embedder lives on a different scale (it keeps `.current`).
     public static let proposed = RecallGateConfig(
         topK: 3,
         minRelevance: 0,
-        maxDistance: 0.10,
+        maxDistance: 0.09,
         minLexicalTokenHits: 2,
         requireDistanceBelowMedian: false
     )

@@ -47,8 +47,28 @@ public actor MemoryStore {
     private static func migrate(db: SQLiteDatabase, embedder: Embedder, databaseURL: URL) throws {
         try createSchema(db)
         try addMissingColumns(db)
+        try addMissingRetrievalColumns(db)
         try migrateVectorStore(db: db, embedder: embedder, databaseURL: databaseURL)
         try backfillFTS(db)
+    }
+
+    /// Additively adds the `session_id` column the retrievals ledger grew for the
+    /// session-scoped recall cooldown (ADR 0023). No-op on an already-migrated DB.
+    private static func addMissingRetrievalColumns(_ db: SQLiteDatabase) throws {
+        var existingColumns = Set<String>()
+        try db.prepare("PRAGMA table_info(retrievals);") { stmt in
+            while try stmt.step() {
+                if let name = stmt.columnText(1) { existingColumns.insert(name) }
+            }
+        }
+        if !existingColumns.contains("session_id") {
+            try db.exec("ALTER TABLE retrievals ADD COLUMN session_id TEXT;")
+        }
+        // Create the index here (not in createSchema) so it's only built once the
+        // session_id column is guaranteed to exist — on a fresh DB and on an
+        // upgraded one alike. Referencing it in createSchema fails on old DBs
+        // whose retrievals table predates the column.
+        try db.exec("CREATE INDEX IF NOT EXISTS idx_retrievals_session ON retrievals(session_id, memory_id, at);")
     }
 
     private static func createSchema(_ db: SQLiteDatabase) throws {
@@ -81,7 +101,8 @@ public actor MemoryStore {
                 memory_id TEXT NOT NULL,
                 source TEXT NOT NULL,
                 query TEXT,
-                at REAL NOT NULL
+                at REAL NOT NULL,
+                session_id TEXT
             );
             CREATE INDEX IF NOT EXISTS idx_retrievals_at ON retrievals(at);
             CREATE INDEX IF NOT EXISTS idx_memories_deleted ON memories(deleted_at);
@@ -878,15 +899,16 @@ public actor MemoryStore {
     /// `query` that surfaced them. One row per id, single timestamp, in a
     /// transaction. Deliberately does **not** touch `access_count` — this ledger
     /// is decoupled from ranking (ADR 0015 preserves ADR 0005's loop-break).
-    public func recordRetrieval(memoryIDs: [UUID], source: RetrievalSource, query: String? = nil) throws {
+    public func recordRetrieval(memoryIDs: [UUID], source: RetrievalSource, query: String? = nil, sessionID: String? = nil) throws {
         guard !memoryIDs.isEmpty else { return }
         let now = Date().timeIntervalSince1970
         let trimmedQuery = query.map { String($0.prefix(Self.maxRetrievalQueryLength)) }
         try db.exec("BEGIN;")
         do {
             for id in memoryIDs {
-                try db.prepare("INSERT INTO retrievals(memory_id, source, query, at) VALUES(?, ?, ?, ?);") { stmt in
-                    stmt.bind(id.uuidString, at: 1).bind(source.rawValue, at: 2).bind(trimmedQuery, at: 3).bind(now, at: 4)
+                try db.prepare("INSERT INTO retrievals(memory_id, source, query, at, session_id) VALUES(?, ?, ?, ?, ?);") { stmt in
+                    stmt.bind(id.uuidString, at: 1).bind(source.rawValue, at: 2).bind(trimmedQuery, at: 3)
+                        .bind(now, at: 4).bind(sessionID, at: 5)
                     _ = try stmt.step()
                 }
             }
@@ -896,6 +918,35 @@ public actor MemoryStore {
             throw error
         }
     }
+
+    /// Memories already injected via `recall` in this session within `cooldown`
+    /// (ADR 0023). The recall hook drops these post-gate so the same memory isn't
+    /// re-injected on every on-topic prompt of a session. Returns an empty set for
+    /// an empty `sessionID` (e.g. a manual `fetch` with no session) so nothing is
+    /// ever suppressed outside a real session.
+    public func recentlyInjectedInSession(_ memoryIDs: [UUID], sessionID: String, within cooldown: TimeInterval) throws -> Set<UUID> {
+        guard !sessionID.isEmpty, !memoryIDs.isEmpty else { return [] }
+        let cutoff = Date().timeIntervalSince1970 - cooldown
+        var suppressed = Set<UUID>()
+        let placeholders = memoryIDs.map { _ in "?" }.joined(separator: ",")
+        let sql = """
+            SELECT DISTINCT memory_id FROM retrievals
+            WHERE session_id = ? AND source = ? AND at >= ? AND memory_id IN (\(placeholders));
+            """
+        try db.prepare(sql) { stmt in
+            stmt.bind(sessionID, at: 1).bind(RetrievalSource.recall.rawValue, at: 2).bind(cutoff, at: 3)
+            for (offset, id) in memoryIDs.enumerated() { stmt.bind(id.uuidString, at: Int32(4 + offset)) }
+            while try stmt.step() {
+                if let text = stmt.columnText(0), let id = UUID(uuidString: text) { suppressed.insert(id) }
+            }
+        }
+        return suppressed
+    }
+
+    /// Cooldown for re-injecting the same memory via recall within one session
+    /// (ADR 0023). 30 minutes: short on-topic sessions show a memory once; a long
+    /// session gets at most a periodic refresh rather than the same note every prompt.
+    public static let recallReinjectionCooldown: TimeInterval = 30 * 60
 
     /// Retrieval-activity rows from `since` onward, newest first, optionally
     /// filtered to one `source`. Powers `engram activity` and the Activity view.

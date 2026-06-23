@@ -1,0 +1,37 @@
+{
+  "_comment": "Ordered prompt sequences for the session-aware injection metric (ADR 0023). Each session stays on one topic, so the same memories keep clearing the gate prompt after prompt — exactly the repetition the session cooldown should damp. Prompts are not labeled; the metric measures re-injection of the same memory within a session, not correctness (that's the per-query eval).",
+  "sessions": [
+    {
+      "name": "engram-internals",
+      "prompts": [
+        "how does engram's recall hook decide what to inject on a prompt?",
+        "what does the recall confidence gate actually do?",
+        "walk me through engram's recall flow end to end",
+        "how does engram keep off-topic memories from being injected?",
+        "what embedding model does engram use to embed memories?",
+        "how does engram combine keyword and semantic search?"
+      ]
+    },
+    {
+      "name": "python-stack",
+      "prompts": [
+        "what's the standard python project setup here?",
+        "how do I manage python dependencies and virtualenvs?",
+        "which tools lint and format our python code?",
+        "how do we type-check python code?",
+        "which test framework do python projects use?",
+        "remind me of the python conventions we follow"
+      ]
+    },
+    {
+      "name": "gcp-deploy",
+      "prompts": [
+        "how are services deployed to kubernetes?",
+        "which gcp project do production services run in?",
+        "how does authentication to gcp work for our services?",
+        "how do I access the kubernetes cluster and gcp infra?",
+        "how are application secrets managed?"
+      ]
+    }
+  ]
+}

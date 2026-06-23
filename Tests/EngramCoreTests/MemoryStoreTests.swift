@@ -182,6 +182,38 @@ private func makeTempStore() throws -> (MemoryStore, URL) {
     #expect(reloaded?.confidence == 1.0)
 }
 
+@Test func migratesPre0023RetrievalsTableMissingSessionID() async throws {
+    // Regression (ADR 0023): a DB whose `retrievals` table predates the
+    // session_id column must upgrade cleanly. The column-referencing index must
+    // not be created before the column exists, or open fails with
+    // "no such column: session_id". The existing tests only ever build the
+    // current schema on a fresh DB, so they missed this upgrade path.
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("engram-test-\(UUID().uuidString).sqlite")
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    // Seed the pre-0023 retrievals schema (no session_id, no session index).
+    let legacy = try SQLiteDatabase(path: url.path)
+    try legacy.exec(
+        """
+        CREATE TABLE retrievals(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            memory_id TEXT NOT NULL,
+            source TEXT NOT NULL,
+            query TEXT,
+            at REAL NOT NULL
+        );
+        CREATE INDEX idx_retrievals_at ON retrievals(at);
+        """
+    )
+
+    // Opening with the current code must migrate, not throw.
+    let store = try MemoryStore(url: url)
+    let stored = try await store.store(content: "Survives the upgrade.")
+    try await store.recordRetrieval(memoryIDs: [stored.id], source: .recall, query: "q", sessionID: "S1")
+    #expect(try await store.recentlyInjectedInSession([stored.id], sessionID: "S1", within: 3600).contains(stored.id))
+}
+
 @Test func markVerifiedSetsVerifiedAtAndConfidence() async throws {
     let (store, url) = try makeTempStore()
     defer { try? FileManager.default.removeItem(at: url) }
@@ -378,4 +410,29 @@ private func makeTempStore() throws -> (MemoryStore, URL) {
     #expect(Lookback.parse("h") == nil)
     #expect(Lookback.parse("1w") == nil)
     #expect(Lookback.parse("abc") == nil)
+}
+
+@Test func recallCooldownSuppressesSameMemoryWithinSession() async throws {
+    // ADR 0023: a memory injected via recall earlier in the same session is
+    // reported as recently-injected so the hook can drop it (no re-injection
+    // every on-topic prompt). Uses raw ids — the ledger doesn't FK memory rows.
+    let (store, url) = try makeTempStore()
+    defer { try? FileManager.default.removeItem(at: url) }
+
+    let id = UUID()
+    try await store.recordRetrieval(memoryIDs: [id], source: .recall, query: "q", sessionID: "S1")
+
+    // same session, within the window → suppressed
+    #expect(try await store.recentlyInjectedInSession([id], sessionID: "S1", within: 3600).contains(id))
+    // a different session → not suppressed
+    #expect(try await store.recentlyInjectedInSession([id], sessionID: "S2", within: 3600).isEmpty)
+    // the cooldown has elapsed (the row is already in the past) → not suppressed
+    #expect(try await store.recentlyInjectedInSession([id], sessionID: "S1", within: 0).isEmpty)
+    // no session id (e.g. a manual fetch) → never suppress
+    #expect(try await store.recentlyInjectedInSession([id], sessionID: "", within: 3600).isEmpty)
+
+    // a non-recall source (manual fetch) is ignored by the recall cooldown
+    let other = UUID()
+    try await store.recordRetrieval(memoryIDs: [other], source: .fetch, query: "q", sessionID: "S1")
+    #expect(try await store.recentlyInjectedInSession([other], sessionID: "S1", within: 3600).isEmpty)
 }

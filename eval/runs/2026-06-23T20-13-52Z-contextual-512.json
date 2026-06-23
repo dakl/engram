@@ -1,0 +1,165 @@
+{
+  "corpusSize" : 153,
+  "embedderSignature" : "contextual-512",
+  "gitSha" : "56bc8cd",
+  "host" : "daniels-fancy-macbook-pro-2.local",
+  "k" : 3,
+  "queryCount" : 58,
+  "results" : [
+    {
+      "report" : {
+        "answerHitRate" : 0.8837209302325582,
+        "avgInjectedOnNegatives" : 3,
+        "injectedRecall" : 0.8294573643410852,
+        "injectionPrecision" : 0.2413793103448276,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 1,
+        "precisionAtK" : 0.32558139534883723,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "current"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.8837209302325582,
+        "avgInjectedOnNegatives" : 1.2,
+        "injectedRecall" : 0.8410852713178294,
+        "injectionPrecision" : 0.31343283582089554,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0.5333333333333333,
+        "precisionAtK" : 0.38888888888888884,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.13"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.9302325581395349,
+        "avgInjectedOnNegatives" : 0.6666666666666666,
+        "injectedRecall" : 0.8875968992248061,
+        "injectionPrecision" : 0.3728813559322034,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0.3333333333333333,
+        "precisionAtK" : 0.4761904761904763,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.12"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.9302325581395349,
+        "avgInjectedOnNegatives" : 0.5333333333333333,
+        "injectedRecall" : 0.8992248062015503,
+        "injectionPrecision" : 0.4205607476635514,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0.26666666666666666,
+        "precisionAtK" : 0.5436507936507938,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.11"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.9302325581395349,
+        "avgInjectedOnNegatives" : 0.13333333333333333,
+        "injectedRecall" : 0.8992248062015503,
+        "injectionPrecision" : 0.46875,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0.13333333333333333,
+        "precisionAtK" : 0.5714285714285715,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.10"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.9302325581395349,
+        "avgInjectedOnNegatives" : 0,
+        "injectedRecall" : 0.8992248062015503,
+        "injectionPrecision" : 0.5357142857142857,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0,
+        "precisionAtK" : 0.6150793650793651,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.09"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.9069767441860465,
+        "avgInjectedOnNegatives" : 0,
+        "injectedRecall" : 0.8759689922480619,
+        "injectionPrecision" : 0.5714285714285714,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0,
+        "precisionAtK" : 0.6626016260162603,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.08"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.20930232558139536,
+        "avgInjectedOnNegatives" : 0,
+        "injectedRecall" : 0.1937984496124031,
+        "injectionPrecision" : 0.5625,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0,
+        "precisionAtK" : 0.7,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.08-lex0"
+    },
+    {
+      "report" : {
+        "answerHitRate" : 0.5116279069767442,
+        "avgInjectedOnNegatives" : 0.5333333333333333,
+        "injectedRecall" : 0.4922480620155039,
+        "injectionPrecision" : 0.32051282051282054,
+        "labeledCount" : 43,
+        "mrr" : 0.8234496124031008,
+        "negativeCount" : 15,
+        "negativeFalsePositiveRate" : 0.26666666666666666,
+        "precisionAtK" : 0.3928571428571428,
+        "recallAtK" : 0.8294573643410852
+      },
+      "variant" : "calib-0.11-lex0"
+    }
+  ],
+  "sessions" : {
+    "firstTouchCoverage" : 1,
+    "withCooldown" : {
+      "meanInjectionsPerSession" : 7,
+      "promptCount" : 17,
+      "redundantInjections" : 0,
+      "redundantRate" : 0,
+      "sessionCount" : 3,
+      "totalInjections" : 21
+    },
+    "withoutCooldown" : {
+      "meanInjectionsPerSession" : 11,
+      "promptCount" : 17,
+      "redundantInjections" : 12,
+      "redundantRate" : 0.36363636363636365,
+      "sessionCount" : 3,
+      "totalInjections" : 33
+    }
+  },
+  "timestamp" : "2026-06-23T20:13:52Z"
+}
