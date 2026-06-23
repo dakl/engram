@@ -9,6 +9,32 @@ struct EngramTests {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.
     }
 
+    // MARK: - Privileged-install escaping (ADR 0022)
+
+    /// `shellQuoted` must wrap in single quotes and neutralise embedded single
+    /// quotes via the `'\''` idiom, so a path can't break out of the quoting (or
+    /// inject) when interpolated into the `do shell script` command.
+    @Test func shellQuotedWrapsAndEscapesSingleQuotes() {
+        #expect(PrivilegedInstaller.shellQuoted("/Applications/Engram.app") == "'/Applications/Engram.app'")
+        // Spaces stay safely inside the quotes.
+        #expect(PrivilegedInstaller.shellQuoted("/My Apps/Engram.app") == "'/My Apps/Engram.app'")
+        // A single quote is closed, escaped, and reopened.
+        #expect(PrivilegedInstaller.shellQuoted("/a'b") == "'/a'\\''b'")
+        // Double quotes and backslashes are inert inside single quotes — left as-is.
+        #expect(PrivilegedInstaller.shellQuoted(#"/a"b\c"#) == #"'/a"b\c'"#)
+    }
+
+    /// `appleScriptEscaped` must escape backslashes first, then double quotes, so
+    /// the shell command sits safely inside the AppleScript double-quoted literal.
+    @Test func appleScriptEscapedEscapesBackslashThenQuote() {
+        #expect(PrivilegedInstaller.appleScriptEscaped("plain") == "plain")
+        #expect(PrivilegedInstaller.appleScriptEscaped(#"a"b"#) == #"a\"b"#)
+        // Backslash is doubled.
+        #expect(PrivilegedInstaller.appleScriptEscaped(#"a\b"#) == #"a\\b"#)
+        // Order matters: a backslash-before-quote becomes \\ then \" (not \\\").
+        #expect(PrivilegedInstaller.appleScriptEscaped(#"a\"b"#) == #"a\\\"b"#)
+    }
+
     // MARK: - Activity selection (issue #2)
 
     /// Regression test: clicking a non-first activity row for a memory that appears

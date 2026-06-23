@@ -61,8 +61,8 @@ enum PrivilegedInstaller {
         let message = String(
             data: errorPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8
         )?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        // osascript reports a user-cancelled auth dialog as error -128.
-        if message.contains("-128") || message.localizedCaseInsensitiveContains("cancel") {
+        // osascript reports a user-cancelled auth dialog as error -128 (userCancelledErr).
+        if message.contains("-128") {
             return .cancelled
         }
         return .failed(message.isEmpty ? "Install failed." : message)
@@ -70,13 +70,14 @@ enum PrivilegedInstaller {
 
     /// Single-quotes a string for /bin/sh, escaping embedded single quotes. Both
     /// paths here are app-derived, not user text, but quote anyway so an unusual
-    /// install location can't break (or inject into) the command.
-    private static func shellQuoted(_ string: String) -> String {
+    /// install location can't break (or inject into) the command. `internal` for
+    /// unit testing (this is the one security-relevant, testable piece).
+    static func shellQuoted(_ string: String) -> String {
         "'" + string.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     /// Escapes a string to sit inside an AppleScript double-quoted literal.
-    private static func appleScriptEscaped(_ string: String) -> String {
+    static func appleScriptEscaped(_ string: String) -> String {
         string
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
