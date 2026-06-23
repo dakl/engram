@@ -49,6 +49,11 @@ let configs: [(name: String, config: RecallGateConfig)] = [
     ("calib-0.12", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.12, minLexicalTokenHits: 2)),
     ("calib-0.11", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.11, minLexicalTokenHits: 2)),
     ("calib-0.10", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.10, minLexicalTokenHits: 2)),
+    ("calib-0.09", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.09, minLexicalTokenHits: 2)),
+    ("calib-0.08", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.08, minLexicalTokenHits: 2)),
+    // Tight distance, NO lexical leg: shows how far recall falls back on the
+    // lexical floor when the semantic gate is nearly closed.
+    ("calib-0.08-lex0", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.08, minLexicalTokenHits: 0)),
     ("calib-0.11-lex0", RecallGateConfig(topK: 3, minRelevance: 0, maxDistance: 0.11, minLexicalTokenHits: 0)),
 ]
 
@@ -113,6 +118,13 @@ func run() async throws {
 
     if CommandLine.arguments.contains("--distances") {
         try await dumpDistances(store: store, querySet: querySet)
+    }
+
+    if CommandLine.arguments.contains("--dump-scores") {
+        try await dumpScores(
+            store: store, querySet: querySet, idForSlug: idForSlug,
+            embedderSignature: await store.embedderSignature
+        )
     }
 
     if CommandLine.arguments.contains("--record") {
@@ -238,6 +250,35 @@ func gitSha() -> String {
     } catch {
         return "unknown"
     }
+}
+
+/// Dumps every fetched candidate's semantic distance + whether it's relevant to
+/// the query, so an external tool can plot ROC/PR curves over the distance
+/// threshold and mark the shipped gate's ceiling. One row per (query, candidate)
+/// with a finite distance (lexical-only candidates carry no distance). Writes
+/// `eval/scores-<embedder>.json`.
+func dumpScores(store: MemoryStore, querySet: QuerySet, idForSlug: [String: UUID], embedderSignature: String) async throws {
+    struct ScoreRow: Encodable { let distance: Double; let relevant: Bool; let kind: String }
+    var rows: [ScoreRow] = []
+    for query in querySet.queries {
+        let relevant = Set(query.relevant.compactMap { idForSlug[$0] })
+        let results = (try? await store.fetch(query: query.prompt, limit: 8, recordAccess: false)) ?? []
+        for result in results where result.distance.isFinite && result.distance < .greatestFiniteMagnitude {
+            rows.append(ScoreRow(distance: result.distance, relevant: relevant.contains(result.memory.id), kind: query.kind))
+        }
+    }
+    let dir = URL(fileURLWithPath: "eval", isDirectory: true)
+    try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    let fileURL = dir.appendingPathComponent("scores-\(embedderSignature).json")
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    try encoder.encode([
+        "currentMaxDistance": RecallGateConfig.current.maxDistance,
+        "proposedMaxDistance": RecallGateConfig.proposed.maxDistance,
+    ]).write(to: dir.appendingPathComponent("thresholds-\(embedderSignature).json"))
+    try encoder.encode(rows).write(to: fileURL)
+    let pos = rows.filter(\.relevant).count
+    print("\ndumped \(rows.count) candidate scores (\(pos) relevant) → \(fileURL.path)")
 }
 
 /// Diagnostic: per query kind, how separable are on-topic from off-topic by raw

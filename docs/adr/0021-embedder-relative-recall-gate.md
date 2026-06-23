@@ -81,3 +81,21 @@ constant is unsafe.
   entirely by **bundling our own deterministic embedder** (ROADMAP item; would
   also make the eval reproducible across machines and the threshold a stable
   constant).
+
+## Addendum (2026-06-23) — recalibrated 0.10 → 0.09
+
+A follow-up sweep (finer `calib-0.09`/`calib-0.08` rows + an ROC/PR threshold
+plot, `scripts/plot_threshold.py`) tightened the contextual ceiling **0.10 →
+0.09**. This is calibration *within* the mechanism this ADR established, not a
+new decision — the decision text above stands.
+
+Why: on the eval, `0.10 → 0.09` drops the negative false-positive rate **13% →
+0%** and lifts injection precision **0.47 → 0.54** with **unchanged gate recall
+(93%)** — the lexical (≥2-token) leg holds recall while the tighter distance leg
+only sheds off-topic injections. This fits Engram's **precision-first** stance
+for recall: the hook runs on every prompt, so a false positive bloats context
+repeatedly, whereas a miss is recoverable (it re-fires next prompt, or `/recall`).
+`0.09` is the knee — `0.08` finally trades gate recall (93% → 91%) for
+diminishing precision. Caveat: small eval set (47 relevant / 15 negatives), so
+0% neg-FP is encouraging, not a guarantee; the value stays embedder-specific via
+`config(forEmbedderSignature:)`.

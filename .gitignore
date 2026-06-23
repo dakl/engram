@@ -36,5 +36,12 @@ memory-slop.md
 # Icon-design scratch renders (Nano Banana ideation output)
 docs/design/renders/
 
+# Regenerable eval plot artifacts — the per-run records under eval/runs/ ARE
+# committed (comparable history); these are scratch from `--dump-scores` + the
+# ROC plotter (scripts/plot_threshold.py).
+eval/scores-*.json
+eval/thresholds-*.json
+eval/threshold.png
+
 # LLVM profiling output
 *.profraw
