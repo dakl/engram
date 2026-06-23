@@ -138,13 +138,16 @@ func run() async throws {
     }
 }
 
-/// Replays each session's prompts in order through `fetch` + the shipped gate
-/// (`.current`), producing the per-prompt injected-id lists twice: once stateless
-/// ("without cooldown" — the old behavior) and once applying the real
-/// session-scoped cooldown (`recentlyInjectedInSession` + `recordRetrieval`,
-/// ADR 0023) against a unique session id, exactly as the recall hook does.
+/// Replays each session's prompts in order through `fetch` + the **shipped** gate
+/// (`config(forEmbedderSignature:)`, the same one the recall hook uses), producing
+/// the per-prompt injected-id lists twice: once stateless ("without cooldown" —
+/// the old behavior) and once applying the real session-scoped cooldown
+/// (`recentlyInjectedInSession` + `recordRetrieval`, ADR 0023) against a unique
+/// session id, exactly as the recall hook does. Using the shipped gate (not the
+/// legacy `.current`) keeps the redundancy numbers faithful to production.
 func simulateSessions(store: MemoryStore, sessions: [EvalSession]) async throws
     -> (withoutCooldown: [[[UUID]]], withCooldown: [[[UUID]]]) {
+    let gate = RecallGate.config(forEmbedderSignature: await store.embedderSignature)
     var without: [[[UUID]]] = []
     var withCd: [[[UUID]]] = []
     for session in sessions {
@@ -153,7 +156,7 @@ func simulateSessions(store: MemoryStore, sessions: [EvalSession]) async throws
         let sessionID = "eval-\(session.name)"
         for prompt in session.prompts {
             let results = (try? await store.fetch(query: prompt, limit: 8, recordAccess: false)) ?? []
-            let confident = RecallGate.select(results, query: prompt, config: .current).map(\.memory.id)
+            let confident = RecallGate.select(results, query: prompt, config: gate).map(\.memory.id)
             statelessLists.append(confident)
 
             let suppressed = (try? await store.recentlyInjectedInSession(
