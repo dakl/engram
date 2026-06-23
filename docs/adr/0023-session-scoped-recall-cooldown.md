@@ -62,10 +62,19 @@ clean future refinement if 30 minutes proves too coarse.
   and the recall hook. New DBs get the column in `CREATE TABLE`; existing DBs get
   it via the additive migration. The decoupling from ranking (ADR 0005/0015) is
   preserved — this only reads/writes the retrieval ledger.
-- The injection ledger now carries `session_id`, which also unlocks a
-  **session-aware eval metric** (a "redundant re-injection rate" over a multi-prompt
-  session) — today's `engram-eval` is per-query (ADR 0021) and structurally can't
-  see this. That metric is follow-up work, not part of this change.
+- The `session_id` on the ledger also unlocks a **session-aware eval metric**,
+  added here (ADR 0021's eval was per-query and structurally couldn't see
+  re-injection). `engram-eval` now replays ordered prompt sequences
+  (`Resources/sessions.json`) through the gate + the real cooldown and reports,
+  via `RetrievalMetrics.SessionInjectionReport`:
+  - **redundant re-injection rate** — share of injections that repeat a memory
+    already injected earlier in the same session — measured **with vs. without**
+    the cooldown (the A/B that justifies this change), and
+  - **first-touch coverage** — that the cooldown never drops a memory's *first*
+    legitimate appearance (a guard against over-suppression).
+  As with the rest of the eval, the numbers are embedder/machine-dependent — a
+  relative A/B, not a benchmark — so concrete figures live in the per-run
+  `eval/runs/*.json` records, not here.
 - Trade-off: a memory shown once early in a very long session could be compacted
   out of context and not reappear until the cooldown lapses. Accepted for v1; a
   transcript-aware check ("is it still in context?") is a possible later refinement.
