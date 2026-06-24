@@ -42,6 +42,7 @@ docs/design/renders/
 eval/scores-*.json
 eval/thresholds-*.json
 eval/threshold.png
+eval/embeddings-roc.png
 
 # LLVM profiling output
 *.profraw
