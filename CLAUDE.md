@@ -27,6 +27,7 @@ and recall content. See `README.md` for architecture and build instructions.
 - `Sources/EngramCore/Facets.swift` — pure parser splitting tags into `key:value` facets vs freeform; folds `source` into `project` (ADR 0013)
 - `Engram/Info.plist` — partial plist merged into the generated one; carries the Sparkle `SU*` keys (custom keys can't go through `INFOPLIST_KEY_*`)
 - `Engram/scripts/bundle-cli.sh` — build phase that bundles the CLI into the app
+- `scripts/store_eval.py` + `scripts/store_eval_fixtures.json` — LLM-in-the-loop **store-behavior** eval (ADR 0025): runs a model with an `engram_store` tool over labeled session fixtures and reports store precision/recall; `--model` parametrizes and records the model id per run under `eval/store-runs/`. `validate` checks fixtures with no API key; `run` needs `anthropic` + `ANTHROPIC_API_KEY`. Separate from the deterministic Swift `engram-eval`; not a CI gate (costs tokens, model-dependent).
 - `scripts/release.sh` + `scripts/bump_version.py` — local `make release-*` flow: gate, bump, tag, push (ADR 0010)
 - `scripts/update_appcast.py` — prepends a release entry to `docs/appcast.xml` (run by CI; stdlib-only so the runner needs no uv)
 - `.github/workflows/release.yml` + `.github/ExportOptions.plist` — CI that signs, notarizes, and publishes a release (ADR 0010)

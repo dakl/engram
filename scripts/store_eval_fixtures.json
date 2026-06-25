@@ -1,0 +1,125 @@
+{
+  "_comment": "Labeled session fixtures for the store-behavior eval (ADR 0025). Each fixture is a short coding-session transcript plus a `should_store` label: does a durable, reusable memory genuinely surface here? Positives = preferences / decisions / project facts / gotchas worth recalling weeks later. Negatives = routine task chatter, transient state, general knowledge, or anything already in the repo/git. Keep messages realistic and concise; add fixtures as new failure modes show up in production.",
+  "fixtures": [
+    {
+      "id": "pref-uv-over-pip",
+      "should_store": true,
+      "rationale": "A stated, durable personal preference — exactly what recall should surface in future sessions.",
+      "messages": [
+        {"role": "user", "content": "Set up the project deps. And just so you know, I always use uv for Python — never pip or plain venv, in any of my repos."},
+        {"role": "assistant", "content": "Got it — I'll use uv (`uv add`, `uv sync`) throughout. Running `uv sync` now."}
+      ]
+    },
+    {
+      "id": "decision-rrf-fusion",
+      "should_store": true,
+      "rationale": "An architectural decision with a rationale — durable and reusable.",
+      "messages": [
+        {"role": "user", "content": "Should we blend the lexical and semantic results by score or by rank?"},
+        {"role": "assistant", "content": "By rank — Reciprocal Rank Fusion. Score blending is brittle because BM25 and cosine live on different scales; RRF only needs the ordering, so it's robust to that. Let's go with RRF."},
+        {"role": "user", "content": "Agreed, do it that way."}
+      ]
+    },
+    {
+      "id": "gotcha-notarization-403",
+      "should_store": true,
+      "rationale": "A hard-won, non-obvious gotcha that would waste time again if forgotten.",
+      "messages": [
+        {"role": "user", "content": "The notarization step keeps failing with a 403."},
+        {"role": "assistant", "content": "Found it: notarytool returns 403 'required agreement' until you re-accept the updated Apple Developer Program License in the portal. Once I accepted it, the same submission went through. Worth remembering — the error message doesn't hint at the license at all."}
+      ]
+    },
+    {
+      "id": "explicit-remember",
+      "should_store": true,
+      "rationale": "An explicit user instruction to remember — must always store.",
+      "messages": [
+        {"role": "user", "content": "Remember that our staging environment deploys from the `release` branch, not `main`."},
+        {"role": "assistant", "content": "Noted — staging deploys from `release`."}
+      ]
+    },
+    {
+      "id": "project-fact-bq-default",
+      "should_store": true,
+      "rationale": "A reusable project/infra fact not derivable from the repo in front of us.",
+      "messages": [
+        {"role": "user", "content": "Where do BigQuery queries run by default for us?"},
+        {"role": "assistant", "content": "Against the `es-dwh` project — that's the production data warehouse and our default for BQ. `es-dwh-test` is only for throwaway dev queries."},
+        {"role": "user", "content": "Right, that's the convention."}
+      ]
+    },
+    {
+      "id": "chatter-run-tests",
+      "should_store": false,
+      "rationale": "Routine task execution with no durable lesson.",
+      "messages": [
+        {"role": "user", "content": "Run the tests."},
+        {"role": "assistant", "content": "Done — `make test` passed, 97 tests green."}
+      ]
+    },
+    {
+      "id": "repo-explain-function",
+      "should_store": false,
+      "rationale": "An explanation of code that's already in the repo — recall would be redundant with reading the file.",
+      "messages": [
+        {"role": "user", "content": "What does `addMissingRetrievalColumns` do?"},
+        {"role": "assistant", "content": "It runs during `migrate()` and adds the `session_id` column to the `retrievals` table if it's missing, then creates the supporting index. You can see it in MemoryStore.swift."}
+      ]
+    },
+    {
+      "id": "transient-debug-step",
+      "should_store": false,
+      "rationale": "A transient debugging action; the state is gone by next session and there's no reusable takeaway.",
+      "messages": [
+        {"role": "user", "content": "Why is the build red?"},
+        {"role": "assistant", "content": "A stale `.build` cache — I ran `swift package clean` and it's green again."}
+      ]
+    },
+    {
+      "id": "smalltalk-greeting",
+      "should_store": false,
+      "rationale": "Small talk; nothing to remember.",
+      "messages": [
+        {"role": "user", "content": "morning! ready to keep going on the installer thing?"},
+        {"role": "assistant", "content": "Morning! Yep — picking up where we left off on the install flow."}
+      ]
+    },
+    {
+      "id": "general-knowledge",
+      "should_store": false,
+      "rationale": "General knowledge unrelated to the user/project — not a personal or project memory.",
+      "messages": [
+        {"role": "user", "content": "Quick aside — what's the capital of Australia?"},
+        {"role": "assistant", "content": "Canberra (not Sydney, which people often guess)."}
+      ]
+    },
+    {
+      "id": "buried-fact-in-chatter",
+      "should_store": true,
+      "rationale": "A durable preference is buried in otherwise-routine chatter; the agent should still catch and store it.",
+      "messages": [
+        {"role": "user", "content": "ok let's wrap up. push the branch and open a PR. oh and from now on default all my new services to Go 1.23, that's our standard now."},
+        {"role": "assistant", "content": "Pushed and PR opened. And noted on the Go 1.23 standard for new services."}
+      ]
+    },
+    {
+      "id": "one-off-lookup",
+      "should_store": false,
+      "rationale": "A one-off value the user asked about in passing; not a durable convention.",
+      "messages": [
+        {"role": "user", "content": "how many memories are in the store right now?"},
+        {"role": "assistant", "content": "98 active, 35 deleted."}
+      ]
+    },
+    {
+      "id": "decision-no-helper-now",
+      "should_store": true,
+      "rationale": "A deliberate decision to defer work, with reasoning — useful context for why the code looks the way it does.",
+      "messages": [
+        {"role": "user", "content": "Should we add the SMAppService privileged helper for one-click install?"},
+        {"role": "assistant", "content": "Not now — for a one-shot symlink it's overkill (persistent root daemon + Login Items prompt). We decided to use a one-shot authenticated osascript instead and revisit the helper only if we ever need repeated silent privileged ops."},
+        {"role": "user", "content": "Yeah, let's go with that decision."}
+      ]
+    }
+  ]
+}
