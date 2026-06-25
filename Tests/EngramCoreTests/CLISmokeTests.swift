@@ -64,6 +64,42 @@ private func tempDB() -> URL {
     #expect(fetchOut.contains("Paris"), "fetch output must include the stored content")
 }
 
+/// The store argument forms the model actually reaches for must all succeed:
+/// positional content, `--content`, and `--text`. Historically only positional
+/// worked, so `engram store --content "…"` failed silently with "missing
+/// content" — a real cause of un-saved memories (see the store-robustness work).
+@Test func cliStoreAcceptsContentAndTextFlags() throws {
+    for (label, args) in [
+        ("positional", ["store", "alpha fact about Paris"]),
+        ("--content", ["store", "--content", "beta fact about Paris"]),
+        ("--text", ["store", "--text", "gamma fact about Paris"]),
+    ] {
+        let db = tempDB()
+        defer { try? FileManager.default.removeItem(at: db) }
+
+        let (out, exit) = try engram(args, db: db)
+        guard exit != -1 else { return } // binary not built — skip
+        #expect(exit == 0, "engram \(label) store must exit 0 (got: \(out))")
+        #expect(out.hasPrefix("stored "), "\(label) store must report success")
+
+        let (fetchOut, _) = try engram(["fetch", "Paris", "--limit", "3"], db: db)
+        #expect(fetchOut.contains("Paris"), "\(label): stored content must be fetchable")
+    }
+}
+
+/// A store with no content (any form) fails non-zero with an actionable message
+/// that points at the correct invocation — not a bare "missing content".
+@Test func cliStoreWithoutContentFailsWithHelpfulMessage() throws {
+    let db = tempDB()
+    defer { try? FileManager.default.removeItem(at: db) }
+
+    let (out, exit) = try engram(["store"], db: db)
+    guard exit != -1 else { return } // binary not built — skip
+    #expect(exit != 0, "a content-less store must fail")
+    #expect(out.contains("--content") && out.contains("engram store"),
+            "the error must show the correct invocation forms (got: \(out))")
+}
+
 /// `engram stats` exits 0 and emits JSON with a numeric totalActive field.
 @Test func cliStatsJSON() throws {
     let db = tempDB()

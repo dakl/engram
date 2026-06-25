@@ -58,7 +58,7 @@ func parseOptions(_ args: [String]) -> (positional: [String], options: [String: 
     var positional: [String] = []
     var options: [String: String] = [:]
     var flags: Set<String> = []
-    let valued: Set<String> = ["--title", "--tags", "--source", "--limit", "--content", "--verifiability", "--check-anchor", "--confidence", "--reason", "--since"]
+    let valued: Set<String> = ["--title", "--tags", "--source", "--limit", "--content", "--text", "--verifiability", "--check-anchor", "--confidence", "--reason", "--since"]
     var index = 0
     while index < args.count {
         let arg = args[index]
@@ -174,7 +174,16 @@ do {
 
     switch command {
     case "store":
-        guard let content = positional.first else { fail("store: missing content") }
+        // Accept content positionally or via --content/--text. The flag forms are
+        // common (and natural) model guesses — `update` uses --content, so the
+        // model often reaches for `engram store --content "…"`. Honoring them here
+        // turns a silent "missing content" failure into a successful store.
+        let storeContent = positional.first ?? options["--content"] ?? options["--text"]
+        guard let content = storeContent,
+              !content.trimmingCharacters(in: .whitespaces).isEmpty else {
+            fail("store: missing content. Pass it positionally — engram store \"<text>\" — "
+                + "or with --content/--text \"<text>\".")
+        }
         let tags = options["--tags"]?.split(separator: ",").map { String($0).trimmingCharacters(in: .whitespaces) } ?? []
         let source = options["--source"]
         let verifiability = options["--verifiability"].flatMap(Verifiability.init(rawValue:))
