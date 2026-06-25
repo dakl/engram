@@ -3,6 +3,15 @@
   <channel>
     <title>Engram</title>
     <item>
+      <title>1.1.1</title>
+      <pubDate>Thu, 25 Jun 2026 07:33:59 +0000</pubDate>
+      <sparkle:version>5</sparkle:version>
+      <sparkle:shortVersionString>1.1.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <description>Engram 1.1.1. Release notes: https://github.com/dakl/engram/releases/tag/v1.1.1</description>
+      <enclosure url="https://github.com/dakl/engram/releases/download/v1.1.1/Engram-1.1.1.zip" sparkle:edSignature="YLVDDKOQycXLCcjgfMvHL5AsX15bVCcEz6usXTJB0nW5zbDQxO2+aYmW/EmKoPictxuOkzlGWRnFDevaW4PRCA==" length="6820138" type="application/octet-stream" />
+    </item>
+    <item>
       <title>1.1.0</title>
       <pubDate>Wed, 24 Jun 2026 05:58:52 +0000</pubDate>
       <sparkle:version>4</sparkle:version>
